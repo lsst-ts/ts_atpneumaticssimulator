@@ -60,12 +60,10 @@ class ATPneumaticsCsc(salobj.BaseCsc):
                          initial_simulation_mode=initial_simulation_mode)
         self.telemetry_interval = 1.0
         """Interval between telemetry updates (sec)"""
-        self._closeM1CoversTask = None  # task for closing mirror covers
-        self._openM1CoversTask = None  # task for opening mirror covers
-        self._closeCellVentsTask = None  # task for closing cell vents
-        self._openCellVentsTask = None  # task for opening cell vents
-        # I hope these two will go away once we have events to report
-        # and store the commanded pressure
+        self._closeM1CoversTask = salobj.make_done_future()
+        self._openM1CoversTask = salobj.make_done_future()
+        self._closeCellVentsTask = salobj.make_done_future()
+        self._openCellVentsTask = salobj.make_done_future()
         self.configure()
         self.initialize()
 
@@ -243,22 +241,22 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     @property
     def m1CoversClosing(self):
         """Are the M1 covers closing?"""
-        return self._closeM1CoversTask is not None and not self._closeM1CoversTask.done()
+        return not self._closeM1CoversTask.done()
 
     @property
     def m1CoversOpening(self):
         """Are the M1 covers opening?"""
-        return self._openM1CoversTask is not None and not self._openM1CoversTask.done()
+        return not self._openM1CoversTask.done()
 
     @property
     def m1VentsClosing(self):
         """Are the M1 vents closing?"""
-        return self._closeCellVentsTask is not None and not self._closeCellVentsTask.done()
+        return not self._closeCellVentsTask.done()
 
     @property
     def m1VentsOpening(self):
         """Are the M1 vents opening?"""
-        return self._openCellVentsTask is not None and not self._openCellVentsTask.done()
+        return not self._openCellVentsTask.done()
 
     async def closeM1Covers(self):
         """Close the M1 covers."""
