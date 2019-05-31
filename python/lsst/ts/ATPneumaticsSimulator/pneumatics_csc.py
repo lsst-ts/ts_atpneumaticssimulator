@@ -158,8 +158,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
 
     def do_closeM1CellVents(self, id_data):
         self.assert_enabled("closeM1CellVents")
-        if self.m1VentsOpening:
-            self._openCellVentsTask.cancel()
+        self._openCellVentsTask.cancel()
         if self.m1VentsClosing:
             return
         self._closeCellVentsTask = asyncio.ensure_future(self.closeCellVents())
@@ -168,8 +167,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
         self.assert_enabled("closeM1Cover")
         if self.m1CoversClosing:
             return
-        if self.m1CoversOpening:
-            self._openM1CoversTask.cancel()
+        self._openM1CoversTask.cancel()
         self._closeM1CoversTask = asyncio.ensure_future(self.closeM1Covers())
 
     def do_closeMasterAirSupply(self, id_data):
@@ -218,16 +216,14 @@ class ATPneumaticsCsc(salobj.BaseCsc):
 
     def do_openM1CellVents(self, id_data):
         self.assert_enabled("openCellVents")
-        if self.m1VentsClosing:
-            self._closeCellVentsTask.cancel()
+        self._closeCellVentsTask.cancel()
         if self.m1VentsOpening:
             return
         self._openCellVentsTask = asyncio.ensure_future(self.openCellVents())
 
     def do_openM1Cover(self, id_data):
         self.assert_enabled("openM1Cover")
-        if self.m1CoversClosing:
-            self._closeM1CoversTask.cancel()
+        self._closeM1CoversTask.cancel()
         if self.m1CoversOpening:
             return
         self._openM1CoversTask = asyncio.ensure_future(self.openM1Covers())
