@@ -28,6 +28,7 @@ from lsst.ts import ATPneumaticsSimulator
 from lsst.ts.idl.enums import ATPneumatics
 
 STD_TIMEOUT = 2  # standard timeout (sec)
+LONG_TIMEOUT = 60
 NODATA_TIMEOUT = 0.1  # timeout when no data expected (sec)
 
 
@@ -81,6 +82,7 @@ class CscTestCase(unittest.TestCase):
                         "summaryState",  # already read
                         "appliedSettingsMatchStart", "detailedState",
                         "errorCode", "logMessage", "settingVersions",
+                        "softwareVersions"
                     ):
                         continue
                     await harness.next_evt(evt_name)
@@ -98,56 +100,56 @@ class CscTestCase(unittest.TestCase):
                 self.assertEqual(state.summaryState, salobj.State.ENABLED)
                 st = await harness.next_evt("instrumentState")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVEOPENED)
+                                 ATPneumatics.AirValveState.OPEN)
                 st = await harness.next_evt("mainValveState")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVEOPENED)
+                                 ATPneumatics.AirValveState.OPEN)
                 st = await harness.next_evt("m1State")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVEOPENED)
+                                 ATPneumatics.AirValveState.OPEN)
                 st = await harness.next_evt("m2State")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVEOPENED)
+                                 ATPneumatics.AirValveState.OPEN)
 
                 await harness.remote.cmd_closeInstrumentAirValve.start(timeout=STD_TIMEOUT)
                 st = await harness.next_evt("instrumentState")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVECLOSED)
+                                 ATPneumatics.AirValveState.CLOSE)
 
                 await harness.remote.cmd_closeMasterAirSupply.start(timeout=STD_TIMEOUT)
                 st = await harness.next_evt("mainValveState")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVECLOSED)
+                                 ATPneumatics.AirValveState.CLOSE)
 
                 await harness.remote.cmd_m1CloseAirValve.start(timeout=STD_TIMEOUT)
                 st = await harness.next_evt("m1State")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVECLOSED)
+                                 ATPneumatics.AirValveState.CLOSE)
 
                 await harness.remote.cmd_m2CloseAirValve.start(timeout=STD_TIMEOUT)
                 st = await harness.next_evt("m2State")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVECLOSED)
+                                 ATPneumatics.AirValveState.CLOSE)
 
                 await harness.remote.cmd_openInstrumentAirValve.start(timeout=STD_TIMEOUT)
                 st = await harness.next_evt("instrumentState")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVEOPENED)
+                                 ATPneumatics.AirValveState.OPEN)
 
                 await harness.remote.cmd_openMasterAirSupply.start(timeout=STD_TIMEOUT)
                 st = await harness.next_evt("mainValveState")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVEOPENED)
+                                 ATPneumatics.AirValveState.OPEN)
 
                 await harness.remote.cmd_m1OpenAirValve.start(timeout=STD_TIMEOUT)
                 st = await harness.next_evt("m1State")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVEOPENED)
+                                 ATPneumatics.AirValveState.OPEN)
 
                 await harness.remote.cmd_m2OpenAirValve.start(timeout=STD_TIMEOUT)
                 st = await harness.next_evt("m2State")
                 self.assertEqual(st.state,
-                                 ATPneumatics.AirValveState.VALVEOPENED)
+                                 ATPneumatics.AirValveState.OPEN)
 
         asyncio.get_event_loop().run_until_complete(doit())
 
@@ -165,7 +167,7 @@ class CscTestCase(unittest.TestCase):
 
                 st = await harness.next_evt("cellVentsState")
                 self.assertEqual(st.state,
-                                 ATPneumatics.CellVentState.CELLVENTSCLOSED)
+                                 ATPneumatics.CellVentState.CELLVENTSCLOSEDSTATE)
                 pos = await harness.next_evt("m1VentsPosition")
                 self.assertEqual(pos.position, ATPneumatics.VentsPosition.CLOSED)
                 sw = await harness.next_evt("m1VentsLimitSwitches")
@@ -175,9 +177,11 @@ class CscTestCase(unittest.TestCase):
                 start_time = time.time()
                 await harness.remote.cmd_openM1CellVents.start(timeout=STD_TIMEOUT)
 
+                await asyncio.wait_for(harness.csc._openCellVentsTask, timeout=STD_TIMEOUT)
+
                 st = await harness.next_evt("cellVentsState", timeout=STD_TIMEOUT)
                 self.assertEqual(st.state,
-                                 ATPneumatics.CellVentState.INMOTION)
+                                 ATPneumatics.CellVentState.INMOTIONSTATE)
                 pos = await harness.next_evt("m1VentsPosition")
                 self.assertEqual(pos.position,
                                  ATPneumatics.VentsPosition.PARTIALLYOPENED)
@@ -192,7 +196,7 @@ class CscTestCase(unittest.TestCase):
                 st = await harness.next_evt("cellVentsState", timeout=desired_open_time + STD_TIMEOUT)
                 measured_duration = time.time() - start_time
                 self.assertEqual(st.state,
-                                 ATPneumatics.CellVentState.CELLVENTSOPENED)
+                                 ATPneumatics.CellVentState.CELLVENTSOPENEDSTATE)
                 pos = await harness.next_evt("m1VentsPosition")
                 self.assertEqual(pos.position,
                                  ATPneumatics.VentsPosition.OPENED)
@@ -213,7 +217,7 @@ class CscTestCase(unittest.TestCase):
 
                 st = await harness.next_evt("cellVentsState", timeout=STD_TIMEOUT)
                 self.assertEqual(st.state,
-                                 ATPneumatics.CellVentState.INMOTION)
+                                 ATPneumatics.CellVentState.INMOTIONSTATE)
                 pos = await harness.next_evt("m1VentsPosition")
                 self.assertEqual(pos.position,
                                  ATPneumatics.VentsPosition.PARTIALLYOPENED)
@@ -228,7 +232,7 @@ class CscTestCase(unittest.TestCase):
                 st = await harness.next_evt("cellVentsState", timeout=desired_close_time + STD_TIMEOUT)
                 measured_duration = time.time() - start_time
                 self.assertEqual(st.state,
-                                 ATPneumatics.CellVentState.CELLVENTSCLOSED)
+                                 ATPneumatics.CellVentState.CELLVENTSCLOSEDSTATE)
                 pos = await harness.next_evt("m1VentsPosition")
                 self.assertEqual(pos.position, ATPneumatics.VentsPosition.CLOSED)
                 sw = await harness.next_evt("m1VentsLimitSwitches")
@@ -259,7 +263,7 @@ class CscTestCase(unittest.TestCase):
 
                 st = await harness.next_evt("m1CoverState")
                 self.assertEqual(st.state,
-                                 ATPneumatics.MirrorCoverState.CLOSED)
+                                 ATPneumatics.MirrorCoverState.MIRRORCOVERSCLOSEDSTATE)
                 sw = await harness.next_evt("m1CoverLimitSwitches")
                 self.assertTrue(sw.cover1ClosedActive)
                 self.assertTrue(sw.cover2ClosedActive)
@@ -273,9 +277,11 @@ class CscTestCase(unittest.TestCase):
                 start_time = time.time()
                 await harness.remote.cmd_openM1Cover.start(timeout=STD_TIMEOUT)
 
+                await harness.csc._openM1CoversTask
+
                 st = await harness.next_evt("m1CoverState", timeout=STD_TIMEOUT)
                 self.assertEqual(st.state,
-                                 ATPneumatics.MirrorCoverState.INMOTION)
+                                 ATPneumatics.MirrorCoverState.INMOTIONSTATE)
                 sw = await harness.next_evt("m1CoverLimitSwitches")
                 self.assertFalse(sw.cover1ClosedActive)
                 self.assertFalse(sw.cover2ClosedActive)
@@ -293,7 +299,7 @@ class CscTestCase(unittest.TestCase):
                 st = await harness.next_evt("m1CoverState", timeout=desired_open_time + STD_TIMEOUT)
                 measured_duration = time.time() - start_time
                 self.assertEqual(st.state,
-                                 ATPneumatics.MirrorCoverState.OPENED)
+                                 ATPneumatics.MirrorCoverState.MIRRORCOVERSOPENEDSTATE)
                 sw = await harness.next_evt("m1CoverLimitSwitches")
                 self.assertFalse(sw.cover1ClosedActive)
                 self.assertFalse(sw.cover2ClosedActive)
@@ -317,7 +323,7 @@ class CscTestCase(unittest.TestCase):
 
                 st = await harness.next_evt("m1CoverState", timeout=STD_TIMEOUT)
                 self.assertEqual(st.state,
-                                 ATPneumatics.MirrorCoverState.INMOTION)
+                                 ATPneumatics.MirrorCoverState.INMOTIONSTATE)
                 sw = await harness.next_evt("m1CoverLimitSwitches")
                 self.assertFalse(sw.cover1ClosedActive)
                 self.assertFalse(sw.cover2ClosedActive)
@@ -335,7 +341,7 @@ class CscTestCase(unittest.TestCase):
                 st = await harness.next_evt("m1CoverState", timeout=desired_close_time + STD_TIMEOUT)
                 measured_duration = time.time() - start_time
                 self.assertEqual(st.state,
-                                 ATPneumatics.MirrorCoverState.CLOSED)
+                                 ATPneumatics.MirrorCoverState.MIRRORCOVERSCLOSEDSTATE)
                 sw = await harness.next_evt("m1CoverLimitSwitches")
                 self.assertTrue(sw.cover1ClosedActive)
                 self.assertTrue(sw.cover2ClosedActive)
@@ -367,8 +373,12 @@ class CscTestCase(unittest.TestCase):
             process = await asyncio.create_subprocess_exec(exe_name)
             try:
                 async with salobj.Domain() as domain:
-                    remote = salobj.Remote(domain=domain, name="ATPneumatics", index=0)
+                    remote = salobj.Remote(domain=domain, name="ATPneumatics")
                     await remote.start_task
+
+                    for i in range(5):
+                        await remote.evt_heartbeat.next(flush=True, timeout=LONG_TIMEOUT)
+
                     summaryState_data = await remote.evt_summaryState.next(flush=False, timeout=STD_TIMEOUT)
                     self.assertEqual(summaryState_data.summaryState, salobj.State.STANDBY)
 

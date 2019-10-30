@@ -17,9 +17,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-import asyncio
 
 from lsst.ts import ATPneumaticsSimulator
 
-csc = ATPneumaticsSimulator.ATPneumaticsCsc.main(index=0)
-asyncio.get_event_loop().run_until_complete(csc.done_task)
+ATPneumaticsSimulator.ATPneumaticsCsc.main(index=None)

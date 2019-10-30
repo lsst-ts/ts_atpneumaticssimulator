@@ -140,16 +140,16 @@ class ATPneumaticsCsc(salobj.BaseCsc):
         self.set_cell_vents_events(closed=True, opened=False)
         self.set_m1_cover_events(closed=True, opened=False)
         self.evt_instrumentState.set_put(
-            state=ATPneumatics.AirValveState.VALVEOPENED,
+            state=ATPneumatics.AirValveState.OPEN,
         )
         self.evt_m1State.set_put(
-            state=ATPneumatics.AirValveState.VALVEOPENED,
+            state=ATPneumatics.AirValveState.OPEN,
         )
         self.evt_m2State.set_put(
-            state=ATPneumatics.AirValveState.VALVEOPENED,
+            state=ATPneumatics.AirValveState.OPEN,
         )
         self.evt_mainValveState.set_put(
-            state=ATPneumatics.AirValveState.VALVEOPENED,
+            state=ATPneumatics.AirValveState.OPEN,
         )
         self.evt_powerStatus.set_put(
             powerOnL1=True,
@@ -160,7 +160,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     def do_closeInstrumentAirValve(self, data):
         self.assert_enabled("closeInstrumentAirValve")
         self.evt_instrumentState.set_put(
-            state=ATPneumatics.AirValveState.VALVECLOSED,
+            state=ATPneumatics.AirValveState.CLOSE,
         )
 
     def do_closeM1CellVents(self, data):
@@ -180,13 +180,13 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     def do_closeMasterAirSupply(self, data):
         self.assert_enabled("closeMasterAirSupply")
         self.evt_mainValveState.set_put(
-            state=ATPneumatics.AirValveState.VALVECLOSED,
+            state=ATPneumatics.AirValveState.CLOSE,
         )
 
     def do_m1CloseAirValve(self, data):
         self.assert_enabled("m1CloseAirValve")
         self.evt_m1State.set_put(
-            state=ATPneumatics.AirValveState.VALVECLOSED,
+            state=ATPneumatics.AirValveState.CLOSE,
         )
 
     def do_m1SetPressure(self, data):
@@ -196,19 +196,19 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     def do_m2CloseAirValve(self, data):
         self.assert_enabled("m2CloseAirValve")
         self.evt_m2State.set_put(
-            state=ATPneumatics.AirValveState.VALVECLOSED,
+            state=ATPneumatics.AirValveState.CLOSE,
         )
 
     def do_m1OpenAirValve(self, data):
         self.assert_enabled("m1OpenAirValve")
         self.evt_m1State.set_put(
-            state=ATPneumatics.AirValveState.VALVEOPENED,
+            state=ATPneumatics.AirValveState.OPEN,
         )
 
     def do_m2OpenAirValve(self, data):
         self.assert_enabled("m2OpenAirValve")
         self.evt_m2State.set_put(
-            state=ATPneumatics.AirValveState.VALVEOPENED,
+            state=ATPneumatics.AirValveState.OPEN,
         )
 
     def do_m2SetPressure(self, data):
@@ -218,7 +218,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     def do_openInstrumentAirValve(self, data):
         self.assert_enabled("openInstrumentAirValve")
         self.evt_instrumentState.set_put(
-            state=ATPneumatics.AirValveState.VALVEOPENED,
+            state=ATPneumatics.AirValveState.OPEN,
         )
 
     def do_openM1CellVents(self, data):
@@ -238,7 +238,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     def do_openMasterAirSupply(self, data):
         self.assert_enabled("openMasterAirSupply")
         self.evt_mainValveState.set_put(
-            state=ATPneumatics.AirValveState.VALVEOPENED,
+            state=ATPneumatics.AirValveState.OPEN,
         )
 
     @property
@@ -264,7 +264,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     async def closeM1Covers(self):
         """Close the M1 covers."""
         if self.evt_m1CoverState.data.state != \
-                ATPneumatics.MirrorCoverState.CLOSED:
+                ATPneumatics.MirrorCoverState.MIRRORCOVERSCLOSEDSTATE:
             self.set_m1_cover_events(closed=False, opened=False)
             await asyncio.sleep(self.m1_covers_close_time)
         self.set_m1_cover_events(closed=True, opened=False)
@@ -280,7 +280,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     async def openM1Covers(self):
         """Open the M1 covers."""
         if self.evt_m1CoverState.data.state != \
-                ATPneumatics.MirrorCoverState.OPENED:
+                ATPneumatics.MirrorCoverState.MIRRORCOVERSOPENEDSTATE:
             self.set_m1_cover_events(closed=False, opened=False)
             await asyncio.sleep(self.m1_covers_open_time)
         self.set_m1_cover_events(closed=False, opened=True)
@@ -318,7 +318,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
         assert not (closed and opened)
         if not (closed or opened):
             self.evt_cellVentsState.set_put(
-                state=ATPneumatics.CellVentState.INMOTION,
+                state=ATPneumatics.CellVentState.INMOTIONSTATE,
             )
 
         self.evt_m1VentsLimitSwitches.set_put(
@@ -330,14 +330,14 @@ class ATPneumaticsCsc(salobj.BaseCsc):
                 position=ATPneumatics.VentsPosition.OPENED,
             )
             self.evt_cellVentsState.set_put(
-                state=ATPneumatics.CellVentState.CELLVENTSOPENED,
+                state=ATPneumatics.CellVentState.CELLVENTSOPENEDSTATE,
             )
         elif closed:
             self.evt_m1VentsPosition.set_put(
                 position=ATPneumatics.VentsPosition.CLOSED,
             )
             self.evt_cellVentsState.set_put(
-                state=ATPneumatics.CellVentState.CELLVENTSCLOSED,
+                state=ATPneumatics.CellVentState.CELLVENTSCLOSEDSTATE,
             )
         else:
             self.evt_m1VentsPosition.set_put(
@@ -367,20 +367,24 @@ class ATPneumaticsCsc(salobj.BaseCsc):
             cover4OpenedActive=opened,
         )
         if opened and closed:
+            self.log.info("INVALID")
             self.evt_m1CoverState.set_put(
-                state=ATPneumatics.MirrorCoverState.INVALID,
+                state=0,
             )
         elif opened:
+            self.log.info(ATPneumatics.MirrorCoverState.MIRRORCOVERSOPENEDSTATE)
             self.evt_m1CoverState.set_put(
-                state=ATPneumatics.MirrorCoverState.OPENED,
+                state=ATPneumatics.MirrorCoverState.MIRRORCOVERSOPENEDSTATE,
             )
         elif closed:
+            self.log.info(ATPneumatics.MirrorCoverState.MIRRORCOVERSCLOSEDSTATE)
             self.evt_m1CoverState.set_put(
-                state=ATPneumatics.MirrorCoverState.CLOSED,
+                state=ATPneumatics.MirrorCoverState.MIRRORCOVERSCLOSEDSTATE,
             )
         else:
+            self.log.info(ATPneumatics.MirrorCoverState.INMOTIONSTATE)
             self.evt_m1CoverState.set_put(
-                state=ATPneumatics.MirrorCoverState.INMOTION,
+                state=ATPneumatics.MirrorCoverState.INMOTIONSTATE,
             )
 
     async def telemetry_loop(self):
@@ -398,7 +402,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
         See `update_events` for the events that are output.
         """
         while self.summary_state == salobj.State.ENABLED:
-            opened_state = ATPneumatics.AirValveState.VALVEOPENED
+            opened_state = ATPneumatics.AirValveState.OPEN
             main_valve_open = self.evt_mainValveState.data.state == opened_state
 
             if main_valve_open and self.evt_m1State.data.state == opened_state:
