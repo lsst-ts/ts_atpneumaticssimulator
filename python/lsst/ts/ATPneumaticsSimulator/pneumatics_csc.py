@@ -35,9 +35,6 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     initial_state : `salobj.State` or `int` (optional)
         The initial state of the CSC. This is provided for unit testing,
         as real CSCs should start up in `State.STANDBY`, the default.
-    initial_simulation_mode : `int` (optional)
-        Initial simulation mode.
-        The only allowed value is 1: simulating.
 
     Notes
     -----
@@ -55,9 +52,9 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     * mainValveState
     * powerStatus
     """
-    def __init__(self, initial_state=salobj.State.STANDBY, initial_simulation_mode=1):
+    def __init__(self, initial_state=salobj.State.STANDBY):
         super().__init__(name="ATPneumatics", index=0, initial_state=initial_state,
-                         initial_simulation_mode=initial_simulation_mode)
+                         simulation_mode=1)
         self.telemetry_interval = 1.0
         """Interval between telemetry updates (sec)"""
         self._closeM1CoversTask = salobj.make_done_future()

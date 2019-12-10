@@ -37,8 +37,7 @@ NODATA_TIMEOUT = 0.1  # timeout when no data expected (sec)
 class Harness:
     def __init__(self, initial_state):
         salobj.test_utils.set_random_lsst_dds_domain()
-        self.csc = ATPneumaticsSimulator.ATPneumaticsCsc(
-            initial_state=initial_state, initial_simulation_mode=1)
+        self.csc = ATPneumaticsSimulator.ATPneumaticsCsc(initial_state=initial_state)
         self.remote = salobj.Remote(domain=self.csc.domain, name="ATPneumatics", index=0)
 
     async def next_evt(self, name, flush=False, timeout=STD_TIMEOUT):
