@@ -4,6 +4,8 @@ ts_ATPneumaticsSimulator
 
 ``ts_ATPneumaticsSimulator`` is an LSST Telescope and Site package that provides a simulator for the auxiliary telescope pneumatics controller: ATPneumatics.
 
+`Documentation <https://ts-atpneumaticssimulator.lsst.io>`_
+
 The package is compatible with LSST DM's ``scons`` build system and ``eups`` package management system.
 Assuming you have the basic LSST DM stack installed you can do the following, from within the package directory:
 
