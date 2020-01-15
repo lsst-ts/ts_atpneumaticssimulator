@@ -81,7 +81,8 @@ class CscTestCase(asynctest.TestCase):
                     "summaryState",  # already read
                     "appliedSettingsMatchStart", "detailedState",
                     "errorCode", "logMessage", "settingVersions",
-                    "softwareVersions"
+                    "softwareVersions",
+                    "settingsApplied"  # not supported by salobj yet
                 ):
                     continue
                 await harness.next_evt(evt_name)
