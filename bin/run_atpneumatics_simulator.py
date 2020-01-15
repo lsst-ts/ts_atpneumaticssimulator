@@ -21,5 +21,4 @@ import asyncio
 
 from lsst.ts import ATPneumaticsSimulator
 
-csc = ATPneumaticsSimulator.ATPneumaticsCsc.main(index=0)
-asyncio.get_event_loop().run_until_complete(csc.done_task)
+asyncio.run(ATPneumaticsSimulator.ATPneumaticsCsc.amain(index=None))
