@@ -11,6 +11,6 @@ _g = globals()
 _g.update(
     build_package_configs(
         project_name="ts_ATPneumaticsSimulator",
-        version=lsst.ts.ATPneumaticsSimulator.version.__version__,
+        version=lsst.ts.ATPneumaticsSimulator.__version__,
     )
 )
