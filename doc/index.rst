@@ -34,7 +34,7 @@ Contributing
 ============
 
 ``lsst.ts.ATPneumaticsSimulator`` is developed at https://github.com/lsst-ts/ts_ATPneumaticsSimulator.
-You can find Jira issues for this module under the `ts_ATPneumaticsSimulator <https://jira.lsstcorp.org/issues/?jql=project%20%3D%20DM%20AND%20component%20%3D%20ts_ATPneumaticsSimulator>`_ component.
+You can find Jira issues for this module using `labels=ts_ATPneumaticsSimulator <https://jira.lsstcorp.org/issues/?jql=project%20%3D%20DM%20AND%20labels%20%20%3D%20ts_ATPneumaticsSimulator>`_.
 
 .. _lsst.ts.ATPneumaticsSimulator-pyapi:
 
@@ -44,3 +44,10 @@ Python API reference
 .. automodapi:: lsst.ts.ATPneumaticsSimulator
    :no-main-docstr:
    :no-inheritance-diagram:
+
+Revision History
+================
+
+.. toctree::
+    revision_history
+    :maxdepth: 1
