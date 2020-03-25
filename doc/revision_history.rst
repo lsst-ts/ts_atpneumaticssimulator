@@ -11,6 +11,7 @@ v0.5.0
 
 Major changes:
 
+* Modernize CSC unit test to use `lsst.ts.salobj.BaseCscTestCase`.
 * Added a revision history.
 * Code formatted by ``black``, with a pre-commit hook to enforce this. See the README file for configuration instructions.
 
