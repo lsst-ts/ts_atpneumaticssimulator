@@ -1,4 +1,3 @@
-
 from setuptools import setup, find_namespace_packages
 
 install_requires = []
@@ -13,13 +12,15 @@ __version__ = "{version}"
 setup(
     name="ts_ATPneumaticsSimulator",
     description="Installs python code for ts_ATPneumaticsSimulator.",
-    use_scm_version={"write_to": "python/lsst/ts/ATPneumaticsSimulator/version.py",
-                     "write_to_template": scm_version_template},
+    use_scm_version={
+        "write_to": "python/lsst/ts/ATPneumaticsSimulator/version.py",
+        "write_to_template": scm_version_template,
+    },
     setup_requires=["setuptools_scm"],
     package_dir={"": "python"},
     packages=find_namespace_packages(where="python"),
     scripts=["bin/run_atpneumatics_simulator.py"],
     tests_require=tests_requires,
     extras_require={"dev": dev_requires},
-    license="GPL"
+    license="GPL",
 )
