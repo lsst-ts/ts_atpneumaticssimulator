@@ -1,10 +1,10 @@
 .. py:currentmodule:: lsst.ts.ATPneumaticsSimulator
 
-.. _lsst.ts.ATPneumaticsSimulator.revision_history:
+.. _lsst.ts.ATPneumaticsSimulator.version_history:
 
-################
-Revision History
-################
+###############
+Version History
+###############
 
 v0.5.2
 ======
