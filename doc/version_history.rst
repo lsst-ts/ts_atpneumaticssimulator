@@ -1,16 +1,37 @@
 .. py:currentmodule:: lsst.ts.ATPneumaticsSimulator
 
-.. _lsst.ts.ATPneumaticsSimulator.revision_history:
+.. _lsst.ts.ATPneumaticsSimulator.version_history:
 
-#########################################
-ts_ATPneumaticsSimulator Revision History
-#########################################
+###############
+Version History
+###############
+
+v0.5.2
+======
+
+* Add ``tests/test_black.py`` to verify that files are formatted with black.
+  This requires ts_salobj 5.11 or later.
+* Update ``tests/test_csc.py`` to use ``BaseCscTestCase.check_bin_script``.
+* Update ``.travis.yml`` to remove ``sudo: false`` to github travis checks pass once again.
+
+Requirements:
+
+* ts_salobj 5.11
+* ts_xml 4
+* ts_idl 1
+
 
 v0.5.1
 ======
 
 * Include conda package build configuration.
 * Added a Jenkinsfile to support continuous integration and to build conda packages.
+
+Requirements:
+
+* ts_salobj 5.4
+* ts_xml 4
+* ts_idl 1
 
 v0.5.0
 ======
