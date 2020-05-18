@@ -19,7 +19,6 @@
 # You should have received a copy of the GNU General Public License
 
 import asyncio
-import shutil
 import time
 import unittest
 
@@ -37,6 +36,13 @@ NODATA_TIMEOUT = 0.1  # timeout when no data expected (sec)
 class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
     def basic_make_csc(self, initial_state, config_dir, simulation_mode):
         return ATPneumaticsSimulator.ATPneumaticsCsc(initial_state=initial_state)
+
+    async def test_bin_script(self):
+        """Test that run_atdometrajectory.py runs the CSC.
+        """
+        await self.check_bin_script(
+            name="ATPneumatics", index=None, exe_name="run_atpneumatics_simulator.py",
+        )
 
     async def test_initial_info(self):
         """Check that all events and telemetry are output at startup
@@ -390,40 +396,6 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
                 await self.remote.evt_m1CoverState.next(
                     flush=False, timeout=NODATA_TIMEOUT
                 )
-
-    async def test_run(self):
-        salobj.test_utils.set_random_lsst_dds_domain()
-        exe_name = "run_atpneumatics_simulator.py"
-        exe_path = shutil.which(exe_name)
-        if exe_path is None:
-            self.fail(
-                f"Could not find bin script {exe_name}; did you setup and scons this package?"
-            )
-
-        process = await asyncio.create_subprocess_exec(exe_name)
-        try:
-            async with salobj.Domain() as domain, salobj.Remote(
-                domain=domain, name="ATPneumatics"
-            ) as remote:
-
-                await remote.evt_heartbeat.next(flush=True, timeout=LONG_TIMEOUT)
-
-                summaryState_data = await remote.evt_summaryState.next(
-                    flush=False, timeout=STD_TIMEOUT
-                )
-                self.assertEqual(summaryState_data.summaryState, salobj.State.STANDBY)
-
-                await remote.cmd_exitControl.start(timeout=STD_TIMEOUT)
-                summaryState_data = await remote.evt_summaryState.next(
-                    flush=False, timeout=STD_TIMEOUT
-                )
-                self.assertEqual(summaryState_data.summaryState, salobj.State.OFFLINE)
-
-                await asyncio.wait_for(process.wait(), 5)
-        except Exception:
-            if process.returncode is None:
-                process.terminate()
-            raise
 
     async def test_set_pressure(self):
         async with self.make_csc(initial_state=salobj.State.ENABLED):
