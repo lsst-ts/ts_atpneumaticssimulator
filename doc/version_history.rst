@@ -6,6 +6,16 @@
 Version History
 ###############
 
+v0.5.4
+======
+
+* Update for compatibility with ts_xml 6.
+
+v0.5.3
+======
+
+* Add black to conda test dependencies
+
 v0.5.2
 ======
 

@@ -59,18 +59,20 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
                 # Skip events that are not output at startup,
                 # or are skipped for a different, stated, reason.
                 if evt_name in (
-                    "appliedSettingsMatchStart",
                     "detailedState",
                     "errorCode",
                     "logMessage",
-                    "settingVersions",
-                    "softwareVersions",
-                    "settingsApplied",  # not supported by salobj yet
+                    "authList",  # not supported by salobj 5
+                    "settingVersions",  # not a configurable CSC
+                    "softwareVersions",  # not a configurable CSC
+                    "appliedSettingsMatchStart",  # not a configurable CSC
+                    "settingsApplied",  # not a configurable CSC
                     "summaryState",  # already read
                 ):
                     continue
-                event = getattr(self.remote, f"evt_{evt_name}")
-                await self.assert_next_sample(event)
+                with self.subTest(evt_name=evt_name):
+                    event = getattr(self.remote, f"evt_{evt_name}")
+                    await self.assert_next_sample(event)
 
             for tel_name in self.csc.salinfo.telemetry_names:
                 tel = getattr(self.remote, f"tel_{tel_name}")
