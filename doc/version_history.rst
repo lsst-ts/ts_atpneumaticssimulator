@@ -6,6 +6,13 @@
 Version History
 ###############
 
+v0.5.5
+======
+
+* Update Jenkinsfile.conda to Jenkins Shared Library 
+* Pinned the ts-idl and ts-salobj version in conda recipe
+* Change conda package name to ts-atpneumaticssimulator
+
 v0.5.4
 ======
 
