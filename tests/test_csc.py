@@ -51,6 +51,11 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
         """
         async with self.make_csc(initial_state=salobj.State.ENABLED):
             await self.assert_next_summary_state(salobj.State.ENABLED)
+            await self.assert_next_sample(
+                topic=self.remote.evt_softwareVersions,
+                cscVersion=ATPneumaticsSimulator.__version__,
+                subsystemVersions="",
+            )
 
             for evt_name in self.csc.salinfo.event_names:
                 # Skip the following events for the stated reasons
@@ -61,6 +66,7 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
                     "logMessage",  # not necessarily output at startup
                     "settingsApplied",  # not a configurable CSC
                     "settingVersions",  # not a configurable CSC
+                    "softwareVersions",  # already read
                     "summaryState",  # already read
                 ):
                     continue

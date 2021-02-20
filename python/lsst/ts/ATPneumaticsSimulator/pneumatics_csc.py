@@ -25,6 +25,7 @@ import asyncio
 
 from lsst.ts import salobj
 from lsst.ts.idl.enums import ATPneumatics
+from . import __version__
 
 
 class ATPneumaticsCsc(salobj.BaseCsc):
@@ -54,6 +55,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     """
 
     valid_simulation_modes = [1]
+    version = __version__
 
     def __init__(self, initial_state=salobj.State.STANDBY):
         super().__init__(
