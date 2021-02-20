@@ -50,23 +50,17 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
         except the m3PortSelected event
         """
         async with self.make_csc(initial_state=salobj.State.ENABLED):
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
-            )
-            self.assertEqual(state.summaryState, salobj.State.ENABLED)
+            await self.assert_next_summary_state(salobj.State.ENABLED)
 
             for evt_name in self.csc.salinfo.event_names:
-                # Skip events that are not output at startup,
-                # or are skipped for a different, stated, reason.
+                # Skip the following events for the stated reasons
                 if evt_name in (
-                    "detailedState",
-                    "errorCode",
-                    "logMessage",
-                    "authList",  # not supported by salobj 5
-                    "settingVersions",  # not a configurable CSC
-                    "softwareVersions",  # not a configurable CSC
                     "appliedSettingsMatchStart",  # not a configurable CSC
+                    "detailedState",  # never output
+                    "errorCode",  # not output at startup
+                    "logMessage",  # not necessarily output at startup
                     "settingsApplied",  # not a configurable CSC
+                    "settingVersions",  # not a configurable CSC
                     "summaryState",  # already read
                 ):
                     continue
@@ -76,14 +70,10 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
 
             for tel_name in self.csc.salinfo.telemetry_names:
                 tel = getattr(self.remote, f"tel_{tel_name}")
-                await tel.next(flush=False, timeout=NODATA_TIMEOUT)
+                await tel.next(flush=False, timeout=STD_TIMEOUT)
 
     async def test_air_valves(self):
         async with self.make_csc(initial_state=salobj.State.ENABLED):
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
-            )
-            self.assertEqual(state.summaryState, salobj.State.ENABLED)
             await self.assert_next_sample(
                 self.remote.evt_instrumentState, state=ATPneumatics.AirValveState.OPENED
             )
@@ -145,10 +135,6 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
                 cell_vents_close_time=desired_close_time,
                 cell_vents_open_time=desired_open_time,
             )
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
-            )
-            self.assertEqual(state.summaryState, salobj.State.ENABLED)
 
             await self.assert_next_sample(
                 self.remote.evt_cellVentsState, state=ATPneumatics.CellVentState.CLOSED
@@ -271,10 +257,6 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
                 m1_covers_close_time=desired_close_time,
                 m1_covers_open_time=desired_open_time,
             )
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
-            )
-            self.assertEqual(state.summaryState, salobj.State.ENABLED)
 
             await self.assert_next_sample(
                 self.remote.evt_m1CoverState, state=ATPneumatics.MirrorCoverState.CLOSED
@@ -408,91 +390,57 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
             self.csc.configure(
                 m1_pressure=init_m1_pressure, m2_pressure=init_m2_pressure,
             )
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
-            )
-            self.assertEqual(state.summaryState, salobj.State.ENABLED)
 
             m1data = await self.remote.tel_m1AirPressure.next(
                 flush=True, timeout=STD_TIMEOUT
             )
-            self.assertEqual(m1data.pressure, init_m1_pressure)
+            self.assertAlmostEqual(m1data.pressure, init_m1_pressure)
             m2data = await self.remote.tel_m2AirPressure.next(
                 flush=True, timeout=STD_TIMEOUT
             )
-            self.assertEqual(m2data.pressure, init_m2_pressure)
+            self.assertAlmostEqual(m2data.pressure, init_m2_pressure)
 
             cmd_m1pressure = 35
             cmd_m2pressure = 47
 
-            self.remote.cmd_m1SetPressure.set(pressure=cmd_m1pressure)
-            await self.remote.cmd_m1SetPressure.start(timeout=STD_TIMEOUT)
-            self.remote.cmd_m2SetPressure.set(pressure=cmd_m2pressure)
-            await self.remote.cmd_m2SetPressure.start(timeout=STD_TIMEOUT)
+            await self.remote.cmd_m1SetPressure.set_start(
+                pressure=cmd_m1pressure, timeout=STD_TIMEOUT
+            )
+            await self.remote.cmd_m2SetPressure.set_start(
+                pressure=cmd_m2pressure, timeout=STD_TIMEOUT
+            )
 
             m1data = await self.remote.tel_m1AirPressure.next(
                 flush=True, timeout=STD_TIMEOUT
             )
-            self.assertEqual(m1data.pressure, cmd_m1pressure)
+            self.assertAlmostEqual(m1data.pressure, cmd_m1pressure)
             m2data = await self.remote.tel_m2AirPressure.next(
                 flush=True, timeout=STD_TIMEOUT
             )
-            self.assertEqual(m2data.pressure, cmd_m2pressure)
+            self.assertAlmostEqual(m2data.pressure, cmd_m2pressure)
 
     async def test_standard_state_transitions(self):
         """Test standard CSC state transitions.
         """
         async with self.make_csc(initial_state=salobj.State.STANDBY):
-            self.assertEqual(self.csc.summary_state, salobj.State.STANDBY)
-            # make sure start_task completes
-            await asyncio.wait_for(self.csc.start_task, timeout=STD_TIMEOUT)
-
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
+            await self.check_standard_state_transitions(
+                enabled_commands=(
+                    "closeInstrumentAirValve",
+                    "closeM1CellVents",
+                    "closeM1Cover",
+                    "closeMasterAirSupply",
+                    "m1CloseAirValve",
+                    "m1SetPressure",
+                    "m2CloseAirValve",
+                    "m1OpenAirValve",
+                    "m2OpenAirValve",
+                    "m2SetPressure",
+                    "openInstrumentAirValve",
+                    "openM1CellVents",
+                    "openM1Cover",
+                    "openMasterAirSupply",
+                )
             )
-            self.assertEqual(state.summaryState, salobj.State.STANDBY)
-
-            # send start; new state is DISABLED
-            await self.remote.cmd_start.start()
-            self.assertEqual(self.csc.summary_state, salobj.State.DISABLED)
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
-            )
-            self.assertEqual(state.summaryState, salobj.State.DISABLED)
-
-            # send enable; new state is ENABLED
-            await self.remote.cmd_enable.start()
-            self.assertEqual(self.csc.summary_state, salobj.State.ENABLED)
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
-            )
-            self.assertEqual(state.summaryState, salobj.State.ENABLED)
-
-            # send disable; new state is DISABLED
-            await self.remote.cmd_disable.start()
-            self.assertEqual(self.csc.summary_state, salobj.State.DISABLED)
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
-            )
-            self.assertEqual(state.summaryState, salobj.State.DISABLED)
-
-            # send standby; new state is STANDBY
-            await self.remote.cmd_standby.start()
-            self.assertEqual(self.csc.summary_state, salobj.State.STANDBY)
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
-            )
-            self.assertEqual(state.summaryState, salobj.State.STANDBY)
-
-            # send exitControl; new state is OFFLINE
-            await self.remote.cmd_exitControl.start()
-            self.assertEqual(self.csc.summary_state, salobj.State.OFFLINE)
-            state = await self.remote.evt_summaryState.next(
-                flush=False, timeout=STD_TIMEOUT
-            )
-            self.assertEqual(state.summaryState, salobj.State.OFFLINE)
-
-            await asyncio.wait_for(self.csc.done_task, timeout=5)
 
 
 if __name__ == "__main__":
