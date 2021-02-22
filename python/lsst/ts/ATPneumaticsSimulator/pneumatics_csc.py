@@ -25,6 +25,7 @@ import asyncio
 
 from lsst.ts import salobj
 from lsst.ts.idl.enums import ATPneumatics
+from . import __version__
 
 
 class ATPneumaticsCsc(salobj.BaseCsc):
@@ -52,6 +53,9 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     * mainValveState
     * powerStatus
     """
+
+    valid_simulation_modes = [1]
+    version = __version__
 
     def __init__(self, initial_state=salobj.State.STANDBY):
         super().__init__(
@@ -262,12 +266,6 @@ class ATPneumaticsCsc(salobj.BaseCsc):
             self.set_cell_vents_events(closed=False, opened=False)
             await asyncio.sleep(self.cell_vents_open_time)
         self.set_cell_vents_events(closed=False, opened=True)
-
-    async def implement_simulation_mode(self, simulation_mode):
-        if simulation_mode != 1:
-            raise salobj.ExpectedError(
-                f"This CSC only supports simulation; simulation_mode={simulation_mode} but must be 1"
-            )
 
     def report_summary_state(self):
         super().report_summary_state()
