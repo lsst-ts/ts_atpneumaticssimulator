@@ -6,6 +6,21 @@
 Version History
 ###############
 
+v0.6.0
+======
+
+* Modernize the unit tests.
+* `ATPneumaticsCsc`: modernize simulation mode handling.
+  This requires ts_salobj 6.
+* `ATPneumaticsCsc`: add ``version`` class variable, to set the ``cscVersions`` field of the ``softwareVersions`` event.
+* Modernize doc/conf.py for documenteer 0.6 and add intersphinx mappings for ts_xml and ts_salobj.
+
+Requirements:
+
+* ts_salobj 6
+* ts_xml 7
+* ts_idl 2
+
 v0.5.5
 ======
 
@@ -13,15 +28,33 @@ v0.5.5
 * Pinned the ts-idl and ts-salobj version in conda recipe
 * Change conda package name to ts-atpneumaticssimulator
 
+Requirements:
+
+* ts_salobj 5.11
+* ts_xml 4
+* ts_idl 1
+
 v0.5.4
 ======
 
 * Update for compatibility with ts_xml 6.
 
+Requirements:
+
+* ts_salobj 5.11
+* ts_xml 4
+* ts_idl 1
+
 v0.5.3
 ======
 
 * Add black to conda test dependencies
+
+Requirements:
+
+* ts_salobj 5.11
+* ts_xml 4
+* ts_idl 1
 
 v0.5.2
 ======
