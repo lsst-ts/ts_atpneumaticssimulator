@@ -6,6 +6,19 @@
 Version History
 ###############
 
+v0.6.1
+======
+
+* Use `unittest.IsolatedAsyncioTestCase` instead of the abandoned asynctest package.
+* Use pre-commit instead of a custom pre-commit hook; see the README.md for instructions.
+* Format the code with black 20.8b1.
+
+Requirements:
+
+* ts_salobj 6
+* ts_xml 7
+* ts_idl 2
+
 v0.6.0
 ======
 
