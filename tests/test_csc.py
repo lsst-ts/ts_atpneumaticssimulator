@@ -22,8 +22,6 @@ import asyncio
 import time
 import unittest
 
-import asynctest
-
 from lsst.ts import salobj
 from lsst.ts import ATPneumaticsSimulator
 from lsst.ts.idl.enums import ATPneumatics
@@ -33,15 +31,16 @@ LONG_TIMEOUT = 60
 NODATA_TIMEOUT = 0.1  # timeout when no data expected (sec)
 
 
-class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
+class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
     def basic_make_csc(self, initial_state, config_dir, simulation_mode):
         return ATPneumaticsSimulator.ATPneumaticsCsc(initial_state=initial_state)
 
     async def test_bin_script(self):
-        """Test that run_atdometrajectory.py runs the CSC.
-        """
+        """Test that run_atdometrajectory.py runs the CSC."""
         await self.check_bin_script(
-            name="ATPneumatics", index=None, exe_name="run_atpneumatics_simulator.py",
+            name="ATPneumatics",
+            index=None,
+            exe_name="run_atpneumatics_simulator.py",
         )
 
     async def test_initial_info(self):
@@ -394,7 +393,8 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
             init_m1_pressure = 5
             init_m2_pressure = 6
             self.csc.configure(
-                m1_pressure=init_m1_pressure, m2_pressure=init_m2_pressure,
+                m1_pressure=init_m1_pressure,
+                m2_pressure=init_m2_pressure,
             )
 
             m1data = await self.remote.tel_m1AirPressure.next(
@@ -426,8 +426,7 @@ class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
             self.assertAlmostEqual(m2data.pressure, cmd_m2pressure)
 
     async def test_standard_state_transitions(self):
-        """Test standard CSC state transitions.
-        """
+        """Test standard CSC state transitions."""
         async with self.make_csc(initial_state=salobj.State.STANDBY):
             await self.check_standard_state_transitions(
                 enabled_commands=(
