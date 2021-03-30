@@ -22,8 +22,6 @@ import asyncio
 import time
 import unittest
 
-import asynctest
-
 from lsst.ts import salobj
 from lsst.ts import ATPneumaticsSimulator
 from lsst.ts.idl.enums import ATPneumatics
@@ -33,7 +31,7 @@ LONG_TIMEOUT = 60
 NODATA_TIMEOUT = 0.1  # timeout when no data expected (sec)
 
 
-class CscTestCase(salobj.BaseCscTestCase, asynctest.TestCase):
+class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
     def basic_make_csc(self, initial_state, config_dir, simulation_mode):
         return ATPneumaticsSimulator.ATPneumaticsCsc(initial_state=initial_state)
 
