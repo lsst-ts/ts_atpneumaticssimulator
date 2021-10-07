@@ -56,18 +56,23 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 subsystemVersions="",
             )
 
-            for evt_name in self.csc.salinfo.event_names:
-                # Skip the following events for the stated reasons
-                if evt_name in (
+            skip_evt_names = frozenset(
+                (
                     "appliedSettingsMatchStart",  # not a configurable CSC
                     "detailedState",  # never output
                     "errorCode",  # not output at startup
                     "logMessage",  # not necessarily output at startup
+                    "largeFileObjectAvailable",  # not output
                     "settingsApplied",  # not a configurable CSC
                     "settingVersions",  # not a configurable CSC
                     "softwareVersions",  # already read
                     "summaryState",  # already read
-                ):
+                )
+            )
+
+            for evt_name in self.csc.salinfo.event_names:
+                # Skip the following events for the stated reasons
+                if evt_name in skip_evt_names:
                     continue
                 with self.subTest(evt_name=evt_name):
                     event = getattr(self.remote, f"evt_{evt_name}")
