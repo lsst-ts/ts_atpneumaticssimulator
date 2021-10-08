@@ -6,6 +6,22 @@
 Version History
 ###############
 
+v0.6.2
+======
+
+* Use ts_utils.
+* Add a Jenkinsfile.
+* Use pytest-black instead of a custom unit test.
+* Modernize unit tests.
+* Fix a unit test broken by making ``largeFileObjectAvailable`` a generic event.
+
+Requirements:
+
+* ts_utils 1
+* ts_salobj 6
+* ts_xml 7
+* ts_idl 2
+
 v0.6.1
 ======
 

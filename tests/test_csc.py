@@ -22,6 +22,8 @@ import asyncio
 import time
 import unittest
 
+import pytest
+
 from lsst.ts import salobj
 from lsst.ts import ATPneumaticsSimulator
 from lsst.ts.idl.enums import ATPneumatics
@@ -56,18 +58,23 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 subsystemVersions="",
             )
 
-            for evt_name in self.csc.salinfo.event_names:
-                # Skip the following events for the stated reasons
-                if evt_name in (
+            skip_evt_names = frozenset(
+                (
                     "appliedSettingsMatchStart",  # not a configurable CSC
                     "detailedState",  # never output
                     "errorCode",  # not output at startup
                     "logMessage",  # not necessarily output at startup
+                    "largeFileObjectAvailable",  # not output
                     "settingsApplied",  # not a configurable CSC
                     "settingVersions",  # not a configurable CSC
                     "softwareVersions",  # already read
                     "summaryState",  # already read
-                ):
+                )
+            )
+
+            for evt_name in self.csc.salinfo.event_names:
+                # Skip the following events for the stated reasons
+                if evt_name in skip_evt_names:
                     continue
                 with self.subTest(evt_name=evt_name):
                     event = getattr(self.remote, f"evt_{evt_name}")
@@ -196,11 +203,11 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             print(
                 f"open time measured {measured_duration:0.2f}; desired {desired_open_time:0.2f}"
             )
-            self.assertLess(abs(measured_duration - desired_open_time), 0.3)
+            assert abs(measured_duration - desired_open_time) < 0.3
 
             # sending open again has no effect
             await self.remote.cmd_openM1CellVents.start(timeout=STD_TIMEOUT)
-            with self.assertRaises(asyncio.TimeoutError):
+            with pytest.raises(asyncio.TimeoutError):
                 await self.remote.evt_cellVentsState.next(
                     flush=False, timeout=NODATA_TIMEOUT
                 )
@@ -245,11 +252,11 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             print(
                 f"close time measured {measured_duration:0.2f}; desired {desired_close_time:0.2f}"
             )
-            self.assertLess(abs(measured_duration - desired_close_time), 0.3)
+            assert abs(measured_duration - desired_close_time) < 0.3
 
             # sending close again has no effect
             await self.remote.cmd_closeM1CellVents.start(timeout=STD_TIMEOUT)
-            with self.assertRaises(asyncio.TimeoutError):
+            with pytest.raises(asyncio.TimeoutError):
                 await self.remote.evt_cellVentsState.next(
                     flush=False, timeout=NODATA_TIMEOUT
                 )
@@ -324,11 +331,11 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             print(
                 f"open time measured {measured_duration:0.2f}; desired {desired_open_time:0.2f}"
             )
-            self.assertLess(abs(measured_duration - desired_open_time), 0.3)
+            assert abs(measured_duration - desired_open_time) < 0.3
 
             # sending open again has no effect
             await self.remote.cmd_openM1Cover.start(timeout=STD_TIMEOUT)
-            with self.assertRaises(asyncio.TimeoutError):
+            with pytest.raises(asyncio.TimeoutError):
                 await self.remote.evt_m1CoverState.next(
                     flush=False, timeout=NODATA_TIMEOUT
                 )
@@ -377,11 +384,11 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             print(
                 f"close time measured {measured_duration:0.2f}; desired {desired_close_time:0.2f}"
             )
-            self.assertLess(abs(measured_duration - desired_close_time), 0.3)
+            assert abs(measured_duration - desired_close_time) < 0.3
 
             # sending close again has no effect
             await self.remote.cmd_closeM1Cover.start(timeout=STD_TIMEOUT)
-            with self.assertRaises(asyncio.TimeoutError):
+            with pytest.raises(asyncio.TimeoutError):
                 await self.remote.evt_m1CoverState.next(
                     flush=False, timeout=NODATA_TIMEOUT
                 )
@@ -400,11 +407,11 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             m1data = await self.remote.tel_m1AirPressure.next(
                 flush=True, timeout=STD_TIMEOUT
             )
-            self.assertAlmostEqual(m1data.pressure, init_m1_pressure)
+            assert m1data.pressure == pytest.approx(init_m1_pressure)
             m2data = await self.remote.tel_m2AirPressure.next(
                 flush=True, timeout=STD_TIMEOUT
             )
-            self.assertAlmostEqual(m2data.pressure, init_m2_pressure)
+            assert m2data.pressure == pytest.approx(init_m2_pressure)
 
             cmd_m1pressure = 35
             cmd_m2pressure = 47
@@ -419,11 +426,11 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             m1data = await self.remote.tel_m1AirPressure.next(
                 flush=True, timeout=STD_TIMEOUT
             )
-            self.assertAlmostEqual(m1data.pressure, cmd_m1pressure)
+            assert m1data.pressure == pytest.approx(cmd_m1pressure)
             m2data = await self.remote.tel_m2AirPressure.next(
                 flush=True, timeout=STD_TIMEOUT
             )
-            self.assertAlmostEqual(m2data.pressure, cmd_m2pressure)
+            assert m2data.pressure == pytest.approx(cmd_m2pressure)
 
     async def test_standard_state_transitions(self):
         """Test standard CSC state transitions."""
@@ -446,7 +453,3 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                     "openMasterAirSupply",
                 )
             )
-
-
-if __name__ == "__main__":
-    unittest.main()

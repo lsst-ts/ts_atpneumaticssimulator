@@ -23,6 +23,7 @@ __all__ = ["ATPneumaticsCsc"]
 
 import asyncio
 
+from lsst.ts import utils
 from lsst.ts import salobj
 from lsst.ts.idl.enums import ATPneumatics
 from . import __version__
@@ -63,10 +64,10 @@ class ATPneumaticsCsc(salobj.BaseCsc):
         )
         self.telemetry_interval = 1.0
         """Interval between telemetry updates (sec)"""
-        self._closeM1CoversTask = salobj.make_done_future()
-        self._openM1CoversTask = salobj.make_done_future()
-        self._closeCellVentsTask = salobj.make_done_future()
-        self._openCellVentsTask = salobj.make_done_future()
+        self._closeM1CoversTask = utils.make_done_future()
+        self._openM1CoversTask = utils.make_done_future()
+        self._closeCellVentsTask = utils.make_done_future()
+        self._openCellVentsTask = utils.make_done_future()
         self.configure()
         self.initialize()
 
