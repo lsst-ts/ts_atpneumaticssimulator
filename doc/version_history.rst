@@ -6,8 +6,23 @@
 Version History
 ###############
 
+v1.0.0
+------
+
+Changes:
+
+* Update for ts_salobj v7, which is required.
+  This also requires ts_xml 11.
+
+Requirements:
+
+* ts_utils 1
+* ts_salobj 7
+* ts_idl 2
+* IDL file for ATPneumatics built from ts_xml 11
+
 v0.6.2
-======
+------
 
 * Use ts_utils.
 * Add a Jenkinsfile.
@@ -23,7 +38,7 @@ Requirements:
 * ts_idl 2
 
 v0.6.1
-======
+------
 
 * Use `unittest.IsolatedAsyncioTestCase` instead of the abandoned asynctest package.
 * Use pre-commit instead of a custom pre-commit hook; see the README.md for instructions.
@@ -36,7 +51,7 @@ Requirements:
 * ts_idl 2
 
 v0.6.0
-======
+------
 
 * Modernize the unit tests.
 * `ATPneumaticsCsc`: modernize simulation mode handling.
@@ -51,7 +66,7 @@ Requirements:
 * ts_idl 2
 
 v0.5.5
-======
+------
 
 * Update Jenkinsfile.conda to Jenkins Shared Library 
 * Pinned the ts-idl and ts-salobj version in conda recipe
@@ -64,7 +79,7 @@ Requirements:
 * ts_idl 1
 
 v0.5.4
-======
+------
 
 * Update for compatibility with ts_xml 6.
 
@@ -75,7 +90,7 @@ Requirements:
 * ts_idl 1
 
 v0.5.3
-======
+------
 
 * Add black to conda test dependencies
 
@@ -86,7 +101,7 @@ Requirements:
 * ts_idl 1
 
 v0.5.2
-======
+------
 
 * Add ``tests/test_black.py`` to verify that files are formatted with black.
   This requires ts_salobj 5.11 or later.
@@ -101,7 +116,7 @@ Requirements:
 
 
 v0.5.1
-======
+------
 
 * Include conda package build configuration.
 * Added a Jenkinsfile to support continuous integration and to build conda packages.
@@ -113,7 +128,7 @@ Requirements:
 * ts_idl 1
 
 v0.5.0
-======
+------
 
 Major changes:
 
@@ -128,7 +143,7 @@ Requirements:
 * ts_idl 1
 
 v0.4.0
-======
+------
 
 Update for ts_xml 4.4 and ts_idl 0.4
 
@@ -139,7 +154,7 @@ Requirements:
 * ts_idl 0.4
 
 v0.3.0
-======
+------
 
 Update for dds salobj
 
@@ -150,7 +165,7 @@ Requirements:
 * ts_idl
 
 v0.2.0
-======
+------
 
 Updated for changes to the ATPneumatics XML
 
@@ -160,7 +175,7 @@ Requirements:
 * ts_salobj 3.8
 
 v0.1.0
-======
+------
 
 First release
 
