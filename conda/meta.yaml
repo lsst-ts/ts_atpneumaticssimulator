@@ -20,7 +20,6 @@ build:
 test:
   requires:
     - ts-conda-build =0.3
-    - ts-simactuators
     - ts-dds
     - ts-idl {{ idl_version }}
     - ts-salobj {{ salobj_version }}
@@ -45,4 +44,3 @@ requirements:
     - setuptools
     - setuptools_scm
     - ts-salobj
-    - ts-simactuators
