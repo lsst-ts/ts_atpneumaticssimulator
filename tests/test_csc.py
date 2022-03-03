@@ -60,13 +60,9 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
 
             skip_evt_names = frozenset(
                 (
-                    "appliedSettingsMatchStart",  # not a configurable CSC
-                    "detailedState",  # never output
-                    "errorCode",  # not output at startup
+                    "detailedState",  # not output by the simulator
                     "logMessage",  # not necessarily output at startup
                     "largeFileObjectAvailable",  # not output
-                    "settingsApplied",  # not a configurable CSC
-                    "settingVersions",  # not a configurable CSC
                     "softwareVersions",  # already read
                     "summaryState",  # already read
                 )
