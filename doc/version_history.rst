@@ -6,6 +6,20 @@
 Version History
 ###############
 
+v1.0.1
+------
+
+Changes:
+
+* tests/test_csc.py test_initial_state: remove obsolete events from the list of initial events to skip.
+
+Requirements:
+
+* ts_utils 1
+* ts_salobj 7
+* ts_idl 2
+* IDL file for ATPneumatics built from ts_xml 11
+
 v1.0.0
 ------
 
