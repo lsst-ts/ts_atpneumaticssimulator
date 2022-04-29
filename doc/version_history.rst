@@ -6,6 +6,26 @@
 Version History
 ###############
 
+v1.1.0
+------
+
+Changes:
+
+Changes:
+
+* `ATPneumaticsCsc`: call ``super().start()`` at the beginning of the start method.
+  This requires ts_salobj 7.1.
+* ``setup.cfg``: set asyncio_mode = auto.
+* git ignore .hypothesis.
+* Modernize ``Jenkinsfile``.
+
+Requirements:
+
+* ts_utils 1
+* ts_salobj 7.1
+* ts_idl 2
+* IDL file for ATPneumatics built from ts_xml 11
+
 v1.0.1
 ------
 
