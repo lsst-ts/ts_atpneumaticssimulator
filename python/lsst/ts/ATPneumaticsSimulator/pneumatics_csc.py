@@ -77,9 +77,9 @@ class ATPneumaticsCsc(salobj.BaseCsc):
         self._openCellVentsTask.cancel()
 
     async def start(self):
+        await super().start()
         await self.configure()
         await self.initialize()
-        await super().start()
 
     async def configure(
         self,
