@@ -38,11 +38,11 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
         return ATPneumaticsSimulator.ATPneumaticsCsc(initial_state=initial_state)
 
     async def test_bin_script(self):
-        """Test that run_atdometrajectory.py runs the CSC."""
+        """Test that run_atdometrajectory runs the CSC."""
         await self.check_bin_script(
             name="ATPneumatics",
             index=None,
-            exe_name="run_atpneumatics_simulator.py",
+            exe_name="run_atpneumatics_simulator",
         )
 
     async def test_initial_info(self):

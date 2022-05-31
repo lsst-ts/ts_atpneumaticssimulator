@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["ATPneumaticsCsc"]
+__all__ = ["ATPneumaticsCsc", "run_atpneumatics_simulator"]
 
 import asyncio
 
@@ -417,3 +417,8 @@ class ATPneumaticsCsc(salobj.BaseCsc):
             )
             await self.tel_loadCell.set_write(cellLoad=self.cell_load)
             await asyncio.sleep(self.telemetry_interval)
+
+
+def run_atpneumatics_simulator():
+    """Run the ATPneumatics CSC simulator."""
+    asyncio.run(ATPneumaticsCsc.amain(index=None))
