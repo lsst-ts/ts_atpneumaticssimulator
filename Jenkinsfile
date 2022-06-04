@@ -65,9 +65,6 @@ pipeline {
                         /home/saluser/.checkout_repo.sh ${WORK_BRANCHES}
                         git pull
 
-                        # Update additional required packages
-                        # FIXME: add additional packages here, if any
-
                         # Make IDL files
                         make_idl_files.py ${env.IDL_NAMES}
                     """
