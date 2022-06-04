@@ -35,7 +35,7 @@ Assuming you have the basic LSST DM stack installed you can do the following, fr
 
 With the package built and set up you can run the simulator using:
 
-    run_atpneumatics_simulator.py
+    run_atpneumatics_simulator
 
 .. _lsst.ts.ATPneumaticsSimulator-contributing:
 
