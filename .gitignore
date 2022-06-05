@@ -6,7 +6,6 @@
 
 # Built by sconsUtils
 version.py
-bin/
 
 # Pytest
 tests/.tests
@@ -15,3 +14,5 @@ pytest_session.txt
 .hypothesis
 .pytest_cache
 .coverage
+
+.vscode
