@@ -1,2 +1,2 @@
 @Library('JenkinsShared')_
-CondaPipeline([], "ts-atpneumaticssimulator", "lsst.ts.ATPneumaticsSimulator")
+CondaPipeline([], "ts-atpneumaticssimulator", "lsst.ts.ATPneumaticsSimulator", "noarch")
