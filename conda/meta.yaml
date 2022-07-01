@@ -10,7 +10,7 @@ build:
   noarch: generic
   script: python -m pip install --no-deps --ignore-installed .
   entry_points:
-    - run_atpneumatics_simulator = lsst.ts.ATPneumaticsSimulator:run_atpneumatics_simulator
+    - run_atpneumatics_simulator = lsst.ts.atpneumaticssimulator:run_atpneumatics_simulator
   script_env:
     - PATH
     - PYTHONPATH

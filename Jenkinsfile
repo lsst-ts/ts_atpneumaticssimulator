@@ -24,7 +24,7 @@ pipeline {
     }
     environment {
         // Python module name.
-        MODULE_NAME = "lsst.ts.ATPneumaticsSimulator"
+        MODULE_NAME = "lsst.ts.atpneumaticssimulator"
         // Space-separated list of SAL component names for all IDL files required.
         IDL_NAMES = "ATPneumatics"
         // Product name for documentation upload; the associated
