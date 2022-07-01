@@ -54,7 +54,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             await self.assert_next_summary_state(salobj.State.ENABLED)
             await self.assert_next_sample(
                 topic=self.remote.evt_softwareVersions,
-                cscVersion=atpneumaticssimulator.__version__,
+                cscVersion=atpneumaticssimulator.__version__ + "-sim",
                 subsystemVersions="",
             )
 
