@@ -1,8 +1,8 @@
 ########################
-ts_ATPneumaticsSimulator
+ts_atpneumaticssimulator
 ########################
 
-``ts_ATPneumaticsSimulator`` is an LSST Telescope and Site package that provides a simulator for the auxiliary telescope pneumatics controller: ATPneumatics.
+``ts_atpneumaticssimulator`` is an LSST Telescope and Site package that provides a simulator for the auxiliary telescope pneumatics controller: ATPneumatics.
 
 `Documentation <https://ts-atpneumaticssimulator.lsst.io>`_
 

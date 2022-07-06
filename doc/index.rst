@@ -1,9 +1,9 @@
-.. py:currentmodule:: lsst.ts.ATPneumaticsSimulator
+.. py:currentmodule:: lsst.ts.atpneumaticssimulator
 
-.. _lsst.ts.ATPneumaticsSimulator:
+.. _lsst.ts.atpneumaticssimulator:
 
 #############################
-lsst.ts.ATPneumaticsSimulator
+lsst.ts.atpneumaticssimulator
 #############################
 
 .. image:: https://img.shields.io/badge/Project Metadata-gray.svg
@@ -11,13 +11,13 @@ lsst.ts.ATPneumaticsSimulator
 .. image:: https://img.shields.io/badge/SAL\ Interface-gray.svg
     :target: https://ts-xml.lsst.io/sal_interfaces/ATPneumatics.html
 .. image:: https://img.shields.io/badge/GitHub-gray.svg
-    :target: https://github.com/lsst-ts/ts_ATPneumaticsSimulator
+    :target: https://github.com/lsst-ts/ts_atpneumaticssimulator
 .. image:: https://img.shields.io/badge/Jira-gray.svg
-    :target: https://jira.lsstcorp.org/issues/?jql=project%3DDM%20AND%20labels%3Dts_ATPneumaticsSimulator
+    :target: https://jira.lsstcorp.org/issues/?jql=project%3DDM%20AND%20labels%3Dts_atpneumaticssimulator
 
 A simulator for the auxiliary telescope pneumatics control system (ATPneumatics CSC).
 
-.. _lsst.ts.ATPneumaticsSimulator-using:
+.. _lsst.ts.atpneumaticssimulator-using:
 
 User Guide
 ==========
@@ -37,20 +37,20 @@ With the package built and set up you can run the simulator using:
 
     run_atpneumatics_simulator
 
-.. _lsst.ts.ATPneumaticsSimulator-contributing:
+.. _lsst.ts.atpneumaticssimulator-contributing:
 
 Contributing
 ============
 
-``lsst.ts.ATPneumaticsSimulator`` is developed at https://github.com/lsst-ts/ts_ATPneumaticsSimulator.
-You can find Jira issues for this module using `labels=ts_ATPneumaticsSimulator <https://jira.lsstcorp.org/issues/?jql=project%3DDM%20AND%20labels%3Dts_ATPneumaticsSimulator>`_.
+``lsst.ts.atpneumaticssimulator`` is developed at https://github.com/lsst-ts/ts_atpneumaticssimulator.
+You can find Jira issues for this module using `labels=ts_atpneumaticssimulator <https://jira.lsstcorp.org/issues/?jql=project%3DDM%20AND%20labels%3Dts_atpneumaticssimulator>`_.
 
-.. _lsst.ts.ATPneumaticsSimulator-pyapi:
+.. _lsst.ts.atpneumaticssimulator-pyapi:
 
 Python API reference
 ====================
 
-.. automodapi:: lsst.ts.ATPneumaticsSimulator
+.. automodapi:: lsst.ts.atpneumaticssimulator
    :no-main-docstr:
 
 Version History

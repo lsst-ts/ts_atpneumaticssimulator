@@ -1,4 +1,4 @@
-# This file is part of ts_ATPneumaticsSimulator.
+# This file is part of ts_atpneumaticssimulator.
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -25,7 +25,7 @@ import unittest
 import pytest
 
 from lsst.ts import salobj
-from lsst.ts import ATPneumaticsSimulator
+from lsst.ts import atpneumaticssimulator
 from lsst.ts.idl.enums import ATPneumatics
 
 STD_TIMEOUT = 2  # standard timeout (sec)
@@ -35,7 +35,7 @@ NODATA_TIMEOUT = 0.1  # timeout when no data expected (sec)
 
 class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
     def basic_make_csc(self, initial_state, config_dir, simulation_mode):
-        return ATPneumaticsSimulator.ATPneumaticsCsc(initial_state=initial_state)
+        return atpneumaticssimulator.ATPneumaticsCsc(initial_state=initial_state)
 
     async def test_bin_script(self):
         """Test that run_atdometrajectory runs the CSC."""
@@ -54,7 +54,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             await self.assert_next_summary_state(salobj.State.ENABLED)
             await self.assert_next_sample(
                 topic=self.remote.evt_softwareVersions,
-                cscVersion=ATPneumaticsSimulator.__version__,
+                cscVersion=atpneumaticssimulator.__version__ + "-sim",
                 subsystemVersions="",
             )
 

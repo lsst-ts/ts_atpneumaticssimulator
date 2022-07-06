@@ -19,6 +19,6 @@
 #
 import asyncio
 
-from lsst.ts.ATPneumaticsSimulator import run_atpneumatics_simulator
+from lsst.ts.atpneumaticssimulator import run_atpneumatics_simulator
 
 asyncio.run(run_atpneumatics_simulator())
