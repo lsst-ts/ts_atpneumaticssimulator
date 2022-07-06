@@ -1,10 +1,26 @@
-.. py:currentmodule:: lsst.ts.ATPneumaticsSimulator
+.. py:currentmodule:: lsst.ts.atpneumaticssimulator
 
-.. _lsst.ts.ATPneumaticsSimulator.version_history:
+.. _lsst.ts.atpneumaticssimulator.version_history:
 
 ###############
 Version History
 ###############
+
+v1.2.0
+------
+
+Changes:
+
+* Rename the package from ts_ATPneumaticsSimulator to ts_atpneumaticssimulator.
+* Append suffix "-sim" to reported cscVersion (like ts_atmcssimulator).
+* conda/meta.yaml: support multiple python versions.
+
+Requirements:
+
+* ts_utils 1
+* ts_salobj 7.1
+* ts_idl 2
+* IDL file for ATPneumatics built from ts_xml 11
 
 v1.1.0
 ------

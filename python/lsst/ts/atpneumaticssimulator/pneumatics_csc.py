@@ -1,4 +1,4 @@
-# This file is part of ts_ATPneumaticsSimulator.
+# This file is part of ts_atpneumaticssimulator.
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -56,7 +56,8 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     """
 
     valid_simulation_modes = [1]
-    version = __version__
+    # Append "-sim" to avoid confusion with the real ATPneumatics CSC.
+    version = f"{__version__}-sim"
 
     def __init__(self, initial_state=salobj.State.STANDBY):
         super().__init__(
