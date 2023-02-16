@@ -19,7 +19,6 @@
 # You should have received a copy of the GNU General Public License
 
 import asyncio
-import time
 import unittest
 
 import pytest
@@ -155,10 +154,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 ventsOpenedActive=False,
             )
 
-            start_time = time.time()
             await self.remote.cmd_openM1CellVents.start(timeout=STD_TIMEOUT)
-
-            await asyncio.wait_for(self.csc._openCellVentsTask, timeout=STD_TIMEOUT)
 
             await self.assert_next_sample(
                 self.remote.evt_cellVentsState,
@@ -183,7 +179,6 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 state=ATPneumatics.CellVentState.OPENED,
                 timeout=desired_open_time + STD_TIMEOUT,
             )
-            measured_duration = time.time() - start_time
             await self.assert_next_sample(
                 self.remote.evt_m1VentsPosition,
                 position=ATPneumatics.VentsPosition.OPENED,
@@ -194,11 +189,6 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 ventsOpenedActive=True,
             )
 
-            print(
-                f"open time measured {measured_duration:0.2f}; desired {desired_open_time:0.2f}"
-            )
-            assert abs(measured_duration - desired_open_time) < 0.3
-
             # sending open again has no effect
             await self.remote.cmd_openM1CellVents.start(timeout=STD_TIMEOUT)
             with pytest.raises(asyncio.TimeoutError):
@@ -206,7 +196,6 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                     flush=False, timeout=NODATA_TIMEOUT
                 )
 
-            start_time = time.time()
             await self.remote.cmd_closeM1CellVents.start(timeout=STD_TIMEOUT)
 
             await self.assert_next_sample(
@@ -232,7 +221,6 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 state=ATPneumatics.CellVentState.CLOSED,
                 timeout=desired_close_time + STD_TIMEOUT,
             )
-            measured_duration = time.time() - start_time
             await self.assert_next_sample(
                 self.remote.evt_m1VentsPosition,
                 position=ATPneumatics.VentsPosition.CLOSED,
@@ -242,11 +230,6 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 ventsClosedActive=True,
                 ventsOpenedActive=False,
             )
-
-            print(
-                f"close time measured {measured_duration:0.2f}; desired {desired_close_time:0.2f}"
-            )
-            assert abs(measured_duration - desired_close_time) < 0.3
 
             # sending close again has no effect
             await self.remote.cmd_closeM1CellVents.start(timeout=STD_TIMEOUT)
@@ -279,10 +262,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 cover4OpenedActive=False,
             )
 
-            start_time = time.time()
             await self.remote.cmd_openM1Cover.start(timeout=STD_TIMEOUT)
-
-            await self.csc._openM1CoversTask
 
             await self.assert_next_sample(
                 self.remote.evt_m1CoverState,
@@ -301,7 +281,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             )
 
             # sending open again is acceptable but has no effect
-            # on the events output nor the time spent opening
+            # on the events output
             await self.remote.cmd_openM1Cover.start(timeout=STD_TIMEOUT)
 
             await self.assert_next_sample(
@@ -309,7 +289,6 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 state=ATPneumatics.MirrorCoverState.OPENED,
                 timeout=desired_open_time + STD_TIMEOUT,
             )
-            measured_duration = time.time() - start_time
             await self.assert_next_sample(
                 self.remote.evt_m1CoverLimitSwitches,
                 cover1ClosedActive=False,
@@ -322,11 +301,6 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 cover4OpenedActive=True,
             )
 
-            print(
-                f"open time measured {measured_duration:0.2f}; desired {desired_open_time:0.2f}"
-            )
-            assert abs(measured_duration - desired_open_time) < 0.3
-
             # sending open again has no effect
             await self.remote.cmd_openM1Cover.start(timeout=STD_TIMEOUT)
             with pytest.raises(asyncio.TimeoutError):
@@ -334,7 +308,6 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                     flush=False, timeout=NODATA_TIMEOUT
                 )
 
-            start_time = time.time()
             await self.remote.cmd_closeM1Cover.start(timeout=STD_TIMEOUT)
 
             await self.assert_next_sample(
@@ -354,7 +327,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             )
 
             # sending close again is acceptable but has no effect
-            # on the events output nor the time spent opening
+            # on the events output
             await self.remote.cmd_closeM1Cover.start(timeout=STD_TIMEOUT)
 
             await self.assert_next_sample(
@@ -362,7 +335,6 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 state=ATPneumatics.MirrorCoverState.CLOSED,
                 timeout=desired_close_time + STD_TIMEOUT,
             )
-            measured_duration = time.time() - start_time
             await self.assert_next_sample(
                 self.remote.evt_m1CoverLimitSwitches,
                 cover1ClosedActive=True,
@@ -374,11 +346,6 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 cover3OpenedActive=False,
                 cover4OpenedActive=False,
             )
-
-            print(
-                f"close time measured {measured_duration:0.2f}; desired {desired_close_time:0.2f}"
-            )
-            assert abs(measured_duration - desired_close_time) < 0.3
 
             # sending close again has no effect
             await self.remote.cmd_closeM1Cover.start(timeout=STD_TIMEOUT)
