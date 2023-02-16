@@ -23,9 +23,7 @@ import time
 import unittest
 
 import pytest
-
-from lsst.ts import salobj
-from lsst.ts import atpneumaticssimulator
+from lsst.ts import atpneumaticssimulator, salobj
 from lsst.ts.idl.enums import ATPneumatics
 
 STD_TIMEOUT = 2  # standard timeout (sec)

@@ -23,9 +23,9 @@ __all__ = ["ATPneumaticsCsc", "run_atpneumatics_simulator"]
 
 import asyncio
 
-from lsst.ts import utils
-from lsst.ts import salobj
+from lsst.ts import salobj, utils
 from lsst.ts.idl.enums import ATPneumatics
+
 from . import __version__
 
 
