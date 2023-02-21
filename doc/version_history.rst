@@ -6,10 +6,24 @@
 Version History
 ###############
 
-v1.2.0
+v1.2.1
 ------
 
-Changes:
+* `ATPneumaticsCsc`: use camel_case where we can.
+* test_csc.py: make more robust by eliminating timing tests.
+  Also stop using private variables in `ATPneumaticsCsc`.
+* pre-commit: update black to 23.1.0 and pre-commit-hooks to v4.4.0 and add isort.
+* ``Jenkinsfile``: stop running as root.
+
+Requirements:
+
+* ts_utils 1
+* ts_salobj 7.1
+* ts_idl 2
+* IDL file for ATPneumatics built from ts_xml 11
+
+v1.2.0
+------
 
 * Rename the package from ts_ATPneumaticsSimulator to ts_atpneumaticssimulator.
 * Append suffix "-sim" to reported cscVersion (like ts_atmcssimulator).
@@ -24,9 +38,6 @@ Requirements:
 
 v1.1.0
 ------
-
-Changes:
-
 
 * Rename command-line scripts to remove ".py" suffix.
 * `ATPneumaticsCsc`: call ``super().start()`` at the beginning of the start method.
@@ -44,8 +55,6 @@ Requirements:
 v1.0.1
 ------
 
-Changes:
-
 * tests/test_csc.py test_initial_state: remove obsolete events from the list of initial events to skip.
 
 Requirements:
@@ -57,8 +66,6 @@ Requirements:
 
 v1.0.0
 ------
-
-Changes:
 
 * Update for ts_salobj v7, which is required.
   This also requires ts_xml 11.
@@ -179,9 +186,7 @@ Requirements:
 v0.5.0
 ------
 
-Major changes:
-
-* Modernize CSC unit test to use `lsst.ts.salobj.BaseCscTestCase`.
+Major * Modernize CSC unit test to use `lsst.ts.salobj.BaseCscTestCase`.
 * Added a revision history.
 * Code formatted by ``black``, with a pre-commit hook to enforce this. See the README file for configuration instructions.
 
