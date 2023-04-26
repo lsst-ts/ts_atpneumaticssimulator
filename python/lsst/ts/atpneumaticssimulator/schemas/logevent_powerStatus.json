@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "id": {
+            "const": "powerStatus"
+        },
+        "powerOnL1": {
+            "type": "boolean",
+            "description": "Status Power line 1, Azimuth motors 1 and 2"
+        },
+        "powerOnL2": {
+            "type": "boolean",
+            "description": "Status Power line 2, Elevation and M3 rotator"
+        },
+        "powerOnL3": {
+            "type": "boolean",
+            "description": "Status Power line 3, Nasmyth ports 1 and 2"
+        }
+    },
+    "required": [
+        "id",
+        "powerOnL1",
+        "powerOnL2",
+        "powerOnL3"
+    ],
+    "additionalProperties": false
+}

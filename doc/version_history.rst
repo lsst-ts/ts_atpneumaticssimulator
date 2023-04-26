@@ -6,6 +6,18 @@
 Version History
 ###############
 
+v1.2.2
+------
+
+* Add JSON schemas for command, event and telemetry exchange via TCP/IP.
+
+Requirements:
+
+* ts_utils 1
+* ts_salobj 7.1
+* ts_idl 2
+* IDL file for ATPneumatics built from ts_xml 11
+
 v1.2.1
 ------
 
@@ -124,7 +136,7 @@ Requirements:
 v0.5.5
 ------
 
-* Update Jenkinsfile.conda to Jenkins Shared Library 
+* Update Jenkinsfile.conda to Jenkins Shared Library
 * Pinned the ts-idl and ts-salobj version in conda recipe
 * Change conda package name to ts-atpneumaticssimulator
 

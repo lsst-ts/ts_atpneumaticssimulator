@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "id": {
+            "const": "m1SetPressure"
+        },
+        "pressure": {
+            "type": "number",
+            "description": "Pressure to M1 pneumatic actuators"
+        }
+    },
+    "required": [
+        "id",
+        "pressure"
+    ],
+    "additionalProperties": false
+}

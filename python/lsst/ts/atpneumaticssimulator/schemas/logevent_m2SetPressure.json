@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "id": {
+            "const": "m2SetPressure"
+        },
+        "pressure": {
+            "type": "number",
+            "description": "Pressure to M2 mirror (Hardware not functional, see DM-20577)."
+        }
+    },
+    "required": [
+        "id",
+        "pressure"
+    ],
+    "additionalProperties": false
+}

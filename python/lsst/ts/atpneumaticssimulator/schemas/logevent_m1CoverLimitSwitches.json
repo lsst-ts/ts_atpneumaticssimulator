@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "id": {
+            "const": "m1CoverLimitSwitches"
+        },
+        "cover1ClosedActive": {
+            "type": "boolean",
+            "description": "True if cover/petal 1 closed"
+        },
+        "cover2ClosedActive": {
+            "type": "boolean",
+            "description": "True if cover/petal 2 closed"
+        },
+        "cover3ClosedActive": {
+            "type": "boolean",
+            "description": "True if cover/petal 3 closed"
+        },
+        "cover4ClosedActive": {
+            "type": "boolean",
+            "description": "True if cover/petal 4 closed"
+        },
+        "cover1OpenedActive": {
+            "type": "boolean",
+            "description": "True if cover/petal 1 open"
+        },
+        "cover2OpenedActive": {
+            "type": "boolean",
+            "description": "True if cover/petal 2 open"
+        },
+        "cover3OpenedActive": {
+            "type": "boolean",
+            "description": "True if cover/petal 3 open"
+        },
+        "cover4OpenedActive": {
+            "type": "boolean",
+            "description": "True if cover/petal 4 open"
+        }
+    },
+    "required": [
+        "id",
+        "cover1ClosedActive",
+        "cover2ClosedActive",
+        "cover3ClosedActive",
+        "cover4ClosedActive",
+        "cover1OpenedActive",
+        "cover2OpenedActive",
+        "cover3OpenedActive",
+        "cover4OpenedActive"
+    ],
+    "additionalProperties": false
+}
