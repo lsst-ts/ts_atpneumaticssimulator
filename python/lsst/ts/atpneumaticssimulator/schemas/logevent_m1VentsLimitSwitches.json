@@ -1,0 +1,23 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "id": {
+            "const": "m1VentsLimitSwitches"
+        },
+        "ventsClosedActive": {
+            "type": "boolean",
+            "description": "True if M1 vents closed"
+        },
+        "ventsOpenedActive": {
+            "type": "boolean",
+            "description": "True if M1 vents open"
+        }
+    },
+    "required": [
+        "id",
+        "ventsClosedActive",
+        "ventsOpenedActive"
+    ],
+    "additionalProperties": false
+}

@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "id": {
+            "const": "m2State"
+        },
+        "state": {
+            "type": "number",
+            "description": "Enumerations (substates): 1:AirValveState_ValveOpened, 2:AirValveState_ValveClosed"
+        }
+    },
+    "required": [
+        "id",
+        "state"
+    ],
+    "additionalProperties": false
+}

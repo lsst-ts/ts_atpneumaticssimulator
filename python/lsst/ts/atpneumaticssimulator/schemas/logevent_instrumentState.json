@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "id": {
+            "const": "instrumentState"
+        },
+        "state": {
+            "type": "number",
+            "description": "Substate of instrument valve"
+        }
+    },
+    "required": [
+        "id",
+        "state"
+    ],
+    "additionalProperties": false
+}
