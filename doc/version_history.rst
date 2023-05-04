@@ -6,10 +6,11 @@
 Version History
 ###############
 
-v1.2.2
+v2.0.0
 ------
 
 * Add JSON schemas for command, event and telemetry exchange via TCP/IP.
+* Add Pneumatics simulator and simulator server for testing the TCP/IP interaction with the real ATPneumatics server.
 
 Requirements:
 
