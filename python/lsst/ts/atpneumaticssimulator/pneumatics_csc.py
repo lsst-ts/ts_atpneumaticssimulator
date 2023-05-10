@@ -1,6 +1,6 @@
 # This file is part of ts_atpneumaticssimulator.
 #
-# Developed for the LSST Data Management System.
+# Developed for the Vera Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
 # (https://www.lsst.org).
 # See the COPYRIGHT file at the top-level directory of this distribution
@@ -59,7 +59,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
     # Append "-sim" to avoid confusion with the real ATPneumatics CSC.
     version = f"{__version__}-sim"
 
-    def __init__(self, initial_state=salobj.State.STANDBY):
+    def __init__(self, initial_state: salobj.State = salobj.State.STANDBY) -> None:
         super().__init__(
             name="ATPneumatics", index=0, initial_state=initial_state, simulation_mode=1
         )
@@ -73,29 +73,39 @@ class ATPneumaticsCsc(salobj.BaseCsc):
         self._close_cell_vents_task = utils.make_done_future()
         self._open_cell_vents_task = utils.make_done_future()
 
-    async def close_tasks(self):
+        # TODO DM-38912 Make this CSC configurable.
+        # Configuration items.
+        self.m1_covers_close_time = 0.0
+        self.m1_covers_open_time = 0.0
+        self.cell_vents_close_time = 0.0
+        self.cell_vents_open_time = 0.0
+        self.main_pressure = 0.0
+        self.cell_load = 0.0
+
+    async def close_tasks(self) -> None:
         await super().close_tasks()
         self._close_m1_covers_task.cancel()
         self._open_m1_covers_task.cancel()
         self._close_cell_vents_task.cancel()
         self._open_cell_vents_task.cancel()
 
-    async def start(self):
+    async def start(self) -> None:
         await super().start()
         await self.configure()
         await self.initialize()
 
+    # TODO DM-38912 Make this CSC configurable.
     async def configure(
         self,
-        m1_covers_close_time=20,
-        m1_covers_open_time=20,
-        cell_vents_close_time=5,
-        cell_vents_open_time=1,
-        m1_pressure=5,
-        m2_pressure=6,
-        main_pressure=10,
-        cell_load=100,
-    ):
+        m1_covers_close_time: float = 20.0,
+        m1_covers_open_time: float = 20.0,
+        cell_vents_close_time: float = 5.0,
+        cell_vents_open_time: float = 1.0,
+        m1_pressure: float = 5.0,
+        m2_pressure: float = 6.0,
+        main_pressure: float = 10.0,
+        cell_load: float = 100.0,
+    ) -> None:
         """Configure the CSC.
 
         Parameters
@@ -112,6 +122,8 @@ class ATPneumaticsCsc(salobj.BaseCsc):
             Initial M1 air pressure (units?)
         m2_pressure : `float`
             Initial M2 air pressure (units?)
+        main_pressure : `float`
+            Initial main air pressure (units?)
         cell_load : `float`
             Initial cell load (units?)
         """
@@ -123,16 +135,16 @@ class ATPneumaticsCsc(salobj.BaseCsc):
         assert m2_pressure > 0
         assert main_pressure > 0
         assert cell_load > 0
+        await self.evt_m1SetPressure.set_write(pressure=m1_pressure)
+        await self.evt_m2SetPressure.set_write(pressure=m2_pressure)
         self.m1_covers_close_time = m1_covers_close_time
         self.m1_covers_open_time = m1_covers_open_time
         self.cell_vents_close_time = cell_vents_close_time
         self.cell_vents_open_time = cell_vents_open_time
-        await self.evt_m1SetPressure.set_write(pressure=m1_pressure)
-        await self.evt_m2SetPressure.set_write(pressure=m2_pressure)
         self.main_pressure = main_pressure
         self.cell_load = cell_load
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize events and telemetry.
 
         * instrumentState
@@ -169,144 +181,144 @@ class ATPneumaticsCsc(salobj.BaseCsc):
             powerOnL3=True,
         )
 
-    async def do_closeInstrumentAirValve(self, data):
+    async def do_closeInstrumentAirValve(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         await self.evt_instrumentState.set_write(
             state=ATPneumatics.AirValveState.CLOSED,
         )
 
-    async def do_closeM1CellVents(self, data):
+    async def do_closeM1CellVents(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         self._open_cell_vents_task.cancel()
         if self.m1_vents_closing:
             return
         self._close_cell_vents_task = asyncio.ensure_future(self.close_cell_vents())
 
-    async def do_closeM1Cover(self, data):
+    async def do_closeM1Cover(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         if self.m1CoversClosing:
             return
         self._open_m1_covers_task.cancel()
         self._close_m1_covers_task = asyncio.ensure_future(self.close_m1_covers())
 
-    async def do_closeMasterAirSupply(self, data):
+    async def do_closeMasterAirSupply(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         await self.evt_mainValveState.set_write(
             state=ATPneumatics.AirValveState.CLOSED,
         )
 
-    async def do_m1CloseAirValve(self, data):
+    async def do_m1CloseAirValve(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         await self.evt_m1State.set_write(
             state=ATPneumatics.AirValveState.CLOSED,
         )
 
-    async def do_m1SetPressure(self, data):
+    async def do_m1SetPressure(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         await self.evt_m1SetPressure.set_write(pressure=data.pressure)
 
-    async def do_m2CloseAirValve(self, data):
+    async def do_m2CloseAirValve(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         await self.evt_m2State.set_write(
             state=ATPneumatics.AirValveState.CLOSED,
         )
 
-    async def do_m1OpenAirValve(self, data):
+    async def do_m1OpenAirValve(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         await self.evt_m1State.set_write(
             state=ATPneumatics.AirValveState.OPENED,
         )
 
-    async def do_m2OpenAirValve(self, data):
+    async def do_m2OpenAirValve(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         await self.evt_m2State.set_write(
             state=ATPneumatics.AirValveState.OPENED,
         )
 
-    async def do_m2SetPressure(self, data):
+    async def do_m2SetPressure(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         await self.evt_m2SetPressure.set_write(pressure=data.pressure)
 
-    async def do_openInstrumentAirValve(self, data):
+    async def do_openInstrumentAirValve(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         await self.evt_instrumentState.set_write(
             state=ATPneumatics.AirValveState.OPENED,
         )
 
-    async def do_openM1CellVents(self, data):
+    async def do_openM1CellVents(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         self._close_cell_vents_task.cancel()
         if self.m1VentsOpening:
             return
         self._open_cell_vents_task = asyncio.ensure_future(self.open_cell_vents())
 
-    async def do_openM1Cover(self, data):
+    async def do_openM1Cover(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         self._close_m1_covers_task.cancel()
         if self.m1CoversOpening:
             return
         self._open_m1_covers_task = asyncio.ensure_future(self.open_m1_covers())
 
-    async def do_openMasterAirSupply(self, data):
+    async def do_openMasterAirSupply(self, data: salobj.BaseMsgType) -> None:
         self.assert_enabled()
         await self.evt_mainValveState.set_write(
             state=ATPneumatics.AirValveState.OPENED,
         )
 
     @property
-    def m1CoversClosing(self):
+    def m1CoversClosing(self) -> bool:
         """Are the M1 covers closing?"""
         return not self._close_m1_covers_task.done()
 
     @property
-    def m1CoversOpening(self):
+    def m1CoversOpening(self) -> bool:
         """Are the M1 covers opening?"""
         return not self._open_m1_covers_task.done()
 
     @property
-    def m1_vents_closing(self):
+    def m1_vents_closing(self) -> bool:
         """Are the M1 vents closing?"""
         return not self._close_cell_vents_task.done()
 
     @property
-    def m1VentsOpening(self):
+    def m1VentsOpening(self) -> bool:
         """Are the M1 vents opening?"""
         return not self._open_cell_vents_task.done()
 
-    async def close_m1_covers(self):
+    async def close_m1_covers(self) -> None:
         """Close the M1 covers."""
         if self.evt_m1CoverState.data.state != ATPneumatics.MirrorCoverState.CLOSED:
             await self.set_m1_cover_events(closed=False, opened=False)
             await asyncio.sleep(self.m1_covers_close_time)
         await self.set_m1_cover_events(closed=True, opened=False)
 
-    async def close_cell_vents(self):
+    async def close_cell_vents(self) -> None:
         """Close the M1 vents."""
         if self.evt_m1VentsPosition.data.position != ATPneumatics.VentsPosition.CLOSED:
             await self.set_cell_vents_events(closed=False, opened=False)
             await asyncio.sleep(self.cell_vents_close_time)
         await self.set_cell_vents_events(closed=True, opened=False)
 
-    async def open_m1_covers(self):
+    async def open_m1_covers(self) -> None:
         """Open the M1 covers."""
         if self.evt_m1CoverState.data.state != ATPneumatics.MirrorCoverState.OPENED:
             await self.set_m1_cover_events(closed=False, opened=False)
             await asyncio.sleep(self.m1_covers_open_time)
         await self.set_m1_cover_events(closed=False, opened=True)
 
-    async def open_cell_vents(self):
+    async def open_cell_vents(self) -> None:
         """Open the M1 vents."""
         if self.evt_m1VentsPosition.data.position != ATPneumatics.VentsPosition.OPENED:
             await self.set_cell_vents_events(closed=False, opened=False)
             await asyncio.sleep(self.cell_vents_open_time)
         await self.set_cell_vents_events(closed=False, opened=True)
 
-    async def handle_summary_state(self):
+    async def handle_summary_state(self) -> None:
         await super().handle_summary_state()
         if self.summary_state in (salobj.State.DISABLED, salobj.State.ENABLED):
             asyncio.create_task(self.telemetry_loop())
 
-    async def set_cell_vents_events(self, closed, opened):
+    async def set_cell_vents_events(self, closed: bool, opened: bool) -> None:
         """Set m1VentsLimitSwitches, m1VentsPosition and cellVentsState events.
 
         Output any changes.
@@ -347,7 +359,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
                 position=ATPneumatics.VentsPosition.PARTIALLYOPENED,
             )
 
-    async def set_m1_cover_events(self, closed, opened):
+    async def set_m1_cover_events(self, closed: bool, opened: bool) -> None:
         """Set m1CoverLimitSwitches and m1CoverState events.
 
         Output any changes.
@@ -386,7 +398,7 @@ class ATPneumaticsCsc(salobj.BaseCsc):
                 state=ATPneumatics.MirrorCoverState.INMOTION,
             )
 
-    async def telemetry_loop(self):
+    async def telemetry_loop(self) -> None:
         """Output telemetry and events that have changed
 
         Notes
@@ -423,6 +435,6 @@ class ATPneumaticsCsc(salobj.BaseCsc):
             await asyncio.sleep(self.telemetry_interval)
 
 
-def run_atpneumatics_simulator():
+def run_atpneumatics_simulator() -> None:
     """Run the ATPneumatics CSC simulator."""
     asyncio.run(ATPneumaticsCsc.amain(index=None))

@@ -1,6 +1,6 @@
 # This file is part of ts_atpneumaticssimulator.
 #
-# Developed for the LSST Data Management System.
+# Developed for the Vera Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
 # (https://www.lsst.org).
 # See the COPYRIGHT file at the top-level directory of this distribution
@@ -17,8 +17,10 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import pathlib
 import unittest
 
 import pytest
@@ -31,10 +33,17 @@ NODATA_TIMEOUT = 0.1  # timeout when no data expected (sec)
 
 
 class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
-    def basic_make_csc(self, initial_state, config_dir, simulation_mode):
+    def basic_make_csc(
+        self,
+        initial_state: salobj.State | int,
+        config_dir: str | pathlib.Path | None,
+        index: int = 1,
+        simulation_mode: int = 1,
+        override: str = "",
+    ) -> atpneumaticssimulator.ATPneumaticsCsc:
         return atpneumaticssimulator.ATPneumaticsCsc(initial_state=initial_state)
 
-    async def test_bin_script(self):
+    async def test_bin_script(self) -> None:
         """Test that run_atdometrajectory runs the CSC."""
         await self.check_bin_script(
             name="ATPneumatics",
@@ -42,7 +51,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             exe_name="run_atpneumatics_simulator",
         )
 
-    async def test_initial_info(self):
+    async def test_initial_info(self) -> None:
         """Check that all events and telemetry are output at startup
 
         except the m3PortSelected event
@@ -77,7 +86,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 tel = getattr(self.remote, f"tel_{tel_name}")
                 await tel.next(flush=False, timeout=STD_TIMEOUT)
 
-    async def test_air_valves(self):
+    async def test_air_valves(self) -> None:
         async with self.make_csc(initial_state=salobj.State.ENABLED):
             await self.assert_next_sample(
                 self.remote.evt_instrumentState, state=ATPneumatics.AirValveState.OPENED
@@ -132,7 +141,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 self.remote.evt_m2State, state=ATPneumatics.AirValveState.OPENED
             )
 
-    async def test_cell_vents(self):
+    async def test_cell_vents(self) -> None:
         desired_close_time = 0.4  # sec
         desired_open_time = 0.8  # sec
         async with self.make_csc(initial_state=salobj.State.ENABLED):
@@ -238,7 +247,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                     flush=False, timeout=NODATA_TIMEOUT
                 )
 
-    async def test_mirror_covers(self):
+    async def test_mirror_covers(self) -> None:
         desired_close_time = 0.4  # sec
         desired_open_time = 0.8  # sec
         async with self.make_csc(initial_state=salobj.State.ENABLED):
@@ -354,7 +363,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                     flush=False, timeout=NODATA_TIMEOUT
                 )
 
-    async def test_set_pressure(self):
+    async def test_set_pressure(self) -> None:
         async with self.make_csc(initial_state=salobj.State.ENABLED):
             # output telemetry often so we don't have to wait
             self.csc.telemetry_interval = 0.1
@@ -393,7 +402,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             )
             assert m2data.pressure == pytest.approx(cmd_m2pressure)
 
-    async def test_standard_state_transitions(self):
+    async def test_standard_state_transitions(self) -> None:
         """Test standard CSC state transitions."""
         async with self.make_csc(initial_state=salobj.State.STANDBY):
             await self.check_standard_state_transitions(
