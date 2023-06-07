@@ -21,7 +21,7 @@
 
 from enum import Enum
 
-__all__ = ["Ack", "CommandKey"]
+__all__ = ["Ack", "CommandKey", "Event", "Telemetry"]
 
 
 class Ack(str, Enum):
@@ -36,3 +36,26 @@ class CommandKey(str, Enum):
     PRESSURE = "pressure"
     SEQUENCE_ID = "sequence_id"
     VALUE = "value"
+
+
+class Event(str, Enum):
+    CELLVENTSTATE = "cellVentsState"
+    ESTOP = "eStop"
+    INSTRUMENTSTATE = "instrumentState"
+    M1COVERLIMITSWITCHES = "m1CoverLimitSwitches"
+    M1COVERSTATE = "m1CoverState"
+    M1SETPRESSURE = "m1SetPressure"
+    M1STATE = "m1State"
+    M1VENTSLIMITSWITCHES = "m1VentsLimitSwitches"
+    M1VENTSPOSITION = "m1VentsPosition"
+    M2STATE = "m2State"
+    M2SETPRESSURE = "m2SetPressure"
+    MAINVALVESTATE = "mainValveState"
+    POWERSTATUS = "powerStatus"
+
+
+class Telemetry(str, Enum):
+    LOAD_CELL = "loadCell"
+    M1_AIR_PRESSURE = "m1AirPressure"
+    M2_AIR_PRESSURE = "m2AirPressure"
+    MAIN_AIR_SOURCE_PRESSURE = "mainAirSourcePressure"

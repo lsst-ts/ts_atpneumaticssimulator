@@ -35,7 +35,7 @@ class PneumaticsServerSimulatorTestCase(tcpip.BaseOneClientServerTestCase):
         self.data: typing.Any | None = None
 
     @contextlib.asynccontextmanager
-    async def create_mtdome_controller(
+    async def create_pneumatics_simulator(
         self,
     ) -> typing.AsyncGenerator[atpneumaticssimulator.PneumaticsServerSimulator, None]:
         async with self.create_server(
@@ -57,7 +57,7 @@ class PneumaticsServerSimulatorTestCase(tcpip.BaseOneClientServerTestCase):
         self.data_event.set()
 
     async def test_read_and_dispatch(self) -> None:
-        async with self.create_mtdome_controller() as server, self.create_client(
+        async with self.create_pneumatics_simulator() as server, self.create_client(
             server
         ) as client:
             self.data_event.clear()
