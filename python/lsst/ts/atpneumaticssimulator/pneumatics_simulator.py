@@ -30,8 +30,16 @@ import jsonschema
 from lsst.ts import tcpip, utils
 from lsst.ts.idl.enums import ATPneumatics
 
-from .dataclasses import LoadCell, M1AirPressure, M2AirPressure, MainAirSourcePressure
-from .enums import Ack, CommandKey, Event, Telemetry
+from .dataclasses import (
+    LoadCell,
+    M1AirPressure,
+    M1CoverLimitSwitches,
+    M1VentsLimitSwitches,
+    M2AirPressure,
+    MainAirSourcePressure,
+    PowerStatus,
+)
+from .enums import Ack, CommandKey, Event, OpenCloseState, Telemetry
 from .pneumatics_server_simulator import PneumaticsServerSimulator
 from .schemas.registry import registry
 
@@ -68,19 +76,25 @@ class PneumaticsSimulator:
         # Task that runs while the telemetry_loop runs.
         self._telemetry_task = utils.make_done_future()
 
-        # Tasks used to run the methods that simulate
-        # opening and closing M1 covers and cell vents.
-        self._close_m1_covers_task = utils.make_done_future()
-        self._open_m1_covers_task = utils.make_done_future()
-        self._close_cell_vents_task = utils.make_done_future()
-        self._open_cell_vents_task = utils.make_done_future()
+        # Keep track of opening and closing states of the covers and vents.
+        self.m1_covers_state = OpenCloseState.CLOSED
+        self.m1_vents_state = OpenCloseState.CLOSED
 
         # Event data.
-        self.main_valve_state_data = ATPneumatics.AirValveState.CLOSED
-        self.m1_set_pressure_data = 0.0
-        self.m2_set_pressure_data = 0.0
-        self.m1_state_data = ATPneumatics.AirValveState.CLOSED
-        self.m2_state_data = ATPneumatics.AirValveState.CLOSED
+        self.cell_vents_state = ATPneumatics.CellVentState.CLOSED
+        self.e_stop = False
+        self.instrument_state = ATPneumatics.AirValveState.CLOSED
+        self.m1_cover_limit_switches = M1CoverLimitSwitches()
+        self.m1_cover_state = ATPneumatics.MirrorCoverState.CLOSED
+        self.m1_pressure = 0.0
+        self.m1_state = ATPneumatics.AirValveState.CLOSED
+        self.m1_vents_limit_switches = M1VentsLimitSwitches()
+        self.m1_vents_position = ATPneumatics.VentsPosition.CLOSED
+        self.m2_cover_state = ATPneumatics.MirrorCoverState.CLOSED
+        self.m2_pressure = 0.0
+        self.m2_state = ATPneumatics.AirValveState.CLOSED
+        self.main_valve_state = ATPneumatics.AirValveState.CLOSED
+        self.power_status = PowerStatus()
 
         # TODO DM-38912 Make this configurable.
         # Configuration items.
@@ -88,7 +102,6 @@ class PneumaticsSimulator:
         self.m1_covers_open_time = 0.0
         self.cell_vents_close_time = 0.0
         self.cell_vents_open_time = 0.0
-        self.main_pressure = 0.0
 
         # Variables holding the data for the telemetry messages.
         self.load_cell = LoadCell()
@@ -103,20 +116,20 @@ class PneumaticsSimulator:
 
         # Dict of command: function.
         self.dispatch_dict: dict[str, typing.Callable] = {
-            "closeInstrumentAirValve": self.close_instrument_air_valve,
-            "closeM1CellVents": self.close_m1_cell_vents,
-            "closeM1Cover": self.close_m1_cover,
-            "closeMasterAirSupply": self.close_master_air_supply,
-            "m1CloseAirValve": self.m1_close_air_valve,
-            "m1OpenAirValve": self.m1_open_air_valve,
-            "m1SetPressure": self.m1_set_pressure,
-            "m2CloseAirValve": self.m2_close_air_valve,
-            "m2OpenAirValve": self.m2_open_air_valve,
-            "m2SetPressure": self.m2_set_pressure,
-            "openInstrumentAirValve": self.open_instrument_air_valve,
-            "openM1CellVents": self.open_m1_cell_vents,
-            "openM1Cover": self.open_m1_cover,
-            "openMasterAirSupply": self.open_master_air_supply,
+            "closeInstrumentAirValve": self.do_close_instrument_air_valve,
+            "closeM1CellVents": self.do_close_m1_cell_vents,
+            "closeM1Cover": self.do_close_m1_cover,
+            "closeMasterAirSupply": self.do_close_master_air_supply,
+            "m1CloseAirValve": self.do_m1_close_air_valve,
+            "m1OpenAirValve": self.do_m1_open_air_valve,
+            "m1SetPressure": self.do_m1_set_pressure,
+            "m2CloseAirValve": self.do_m2_close_air_valve,
+            "m2OpenAirValve": self.do_m2_open_air_valve,
+            "m2SetPressure": self.do_m2_set_pressure,
+            "openInstrumentAirValve": self.do_open_instrument_air_valve,
+            "openM1CellVents": self.do_open_m1_cell_vents,
+            "openM1Cover": self.do_open_m1_cover,
+            "openMasterAirSupply": self.do_open_master_air_supply,
         }
 
     # TODO DM-38912 Make this configurable.
@@ -160,13 +173,15 @@ class PneumaticsSimulator:
         assert m2_pressure > 0
         assert main_pressure > 0
         assert cell_load > 0
-        await self._write_evt(evt_id=Event.M1SETPRESSURE, pressure=m1_pressure)
-        await self._write_evt(evt_id=Event.M2SETPRESSURE, pressure=m2_pressure)
+        self.m1_pressure = m1_pressure
+        self.m2_pressure = m2_pressure
+        await self._write_evt(evt_id=Event.M1SETPRESSURE, pressure=self.m1_pressure)
+        await self._write_evt(evt_id=Event.M2SETPRESSURE, pressure=self.m2_pressure)
         self.m1_covers_close_time = m1_covers_close_time
         self.m1_covers_open_time = m1_covers_open_time
         self.cell_vents_close_time = cell_vents_close_time
         self.cell_vents_open_time = cell_vents_open_time
-        self.main_pressure = main_pressure
+        self.main_air_source_pressure.pressure = main_pressure
         self.load_cell.cellLoad = cell_load
 
     async def initialize(self) -> None:
@@ -185,24 +200,26 @@ class PneumaticsSimulator:
         * mainValveState
         * powerStatus
         """
-        await self._write_evt(evt_id=Event.ESTOP, triggered=False)
+        self.e_stop = False
+        await self._write_evt(evt_id=Event.ESTOP, triggered=self.e_stop)
         await self.set_cell_vents_events(closed=True, opened=False)
         await self.set_m1_cover_events(closed=True, opened=False)
+        self.instrument_state = ATPneumatics.AirValveState.OPENED
+        await self._write_evt(evt_id=Event.INSTRUMENTSTATE, state=self.instrument_state)
+        self.m1_state = ATPneumatics.AirValveState.OPENED
+        await self._write_evt(evt_id=Event.M1STATE, state=self.m1_state)
+        self.m2_state = ATPneumatics.AirValveState.OPENED
+        await self._write_evt(evt_id=Event.M2STATE, state=self.m2_state)
+        self.main_valve_state = ATPneumatics.AirValveState.OPENED
+        await self._write_evt(evt_id=Event.MAINVALVESTATE, state=self.main_valve_state)
+        self.power_status.powerOnL1 = True
+        self.power_status.powerOnL2 = True
+        self.power_status.powerOnL3 = True
         await self._write_evt(
-            evt_id=Event.INSTRUMENTSTATE,
-            state=ATPneumatics.AirValveState.OPENED,
-        )
-        await self._write_evt(
-            evt_id=Event.M1STATE, state=ATPneumatics.AirValveState.OPENED
-        )
-        await self._write_evt(
-            evt_id=Event.M2STATE, state=ATPneumatics.AirValveState.OPENED
-        )
-        await self._write_evt(
-            evt_id=Event.MAINVALVESTATE, state=ATPneumatics.AirValveState.OPENED
-        )
-        await self._write_evt(
-            evt_id=Event.POWERSTATUS, powerOnL1=True, powerOnL2=True, powerOnL3=True
+            evt_id=Event.POWERSTATUS,
+            powerOnL1=self.power_status.powerOnL1,
+            powerOnL2=self.power_status.powerOnL2,
+            powerOnL3=self.power_status.powerOnL3,
         )
 
     async def cmd_evt_dispatch_callback(self, data: typing.Any) -> None:
@@ -264,88 +281,94 @@ class PneumaticsSimulator:
             return False
         return True
 
-    async def close_instrument_air_valve(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_close_instrument_air_valve(self, sequence_id: int) -> None:
+        self.instrument_state = ATPneumatics.AirValveState.CLOSED
+        await self._write_evt(evt_id=Event.INSTRUMENTSTATE, state=self.instrument_state)
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def close_m1_cell_vents(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_close_m1_cell_vents(self, sequence_id: int) -> None:
+        if self.m1_vents_state not in [OpenCloseState.CLOSING, OpenCloseState.CLOSED]:
+            self.m1_vents_state = OpenCloseState.CLOSING
+            if self.m1_vents_position != ATPneumatics.VentsPosition.CLOSED:
+                await self.set_cell_vents_events(closed=False, opened=False)
+                await asyncio.sleep(self.cell_vents_close_time)
+            await self.set_cell_vents_events(closed=True, opened=False)
+            self.m1_vents_state = OpenCloseState.CLOSED
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def close_m1_cover(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_close_m1_cover(self, sequence_id: int) -> None:
+        if self.m1_covers_state not in [OpenCloseState.CLOSING, OpenCloseState.CLOSED]:
+            self.m1_covers_state = OpenCloseState.CLOSING
+            if self.m1_cover_state != ATPneumatics.MirrorCoverState.CLOSED:
+                await self.set_m1_cover_events(closed=False, opened=False)
+                await asyncio.sleep(self.m1_covers_close_time)
+            await self.set_m1_cover_events(closed=True, opened=False)
+            self.m1_covers_state = OpenCloseState.CLOSED
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def close_master_air_supply(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_close_master_air_supply(self, sequence_id: int) -> None:
+        self.main_valve_state = ATPneumatics.AirValveState.CLOSED
+        await self._write_evt(evt_id=Event.MAINVALVESTATE, state=self.main_valve_state)
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def m1_close_air_valve(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_m1_close_air_valve(self, sequence_id: int) -> None:
+        self.m1_state = ATPneumatics.AirValveState.CLOSED
+        await self._write_evt(evt_id=Event.M1STATE, state=self.m1_state)
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def m1_open_air_valve(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_m1_open_air_valve(self, sequence_id: int) -> None:
+        self.m1_state = ATPneumatics.AirValveState.OPENED
+        await self._write_evt(evt_id=Event.M1STATE, state=self.m1_state)
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def m1_set_pressure(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_m1_set_pressure(self, sequence_id: int, pressure: float) -> None:
+        self.m1_pressure = pressure
+        await self._write_evt(evt_id=Event.M1SETPRESSURE, pressure=self.m1_pressure)
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def m2_close_air_valve(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_m2_close_air_valve(self, sequence_id: int) -> None:
+        self.m2_state = ATPneumatics.AirValveState.CLOSED
+        await self._write_evt(evt_id=Event.M2STATE, state=self.m2_state)
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def m2_open_air_valve(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_m2_open_air_valve(self, sequence_id: int) -> None:
+        self.m2_state = ATPneumatics.AirValveState.OPENED
+        await self._write_evt(evt_id=Event.M2STATE, state=self.m2_state)
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def m2_set_pressure(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_m2_set_pressure(self, sequence_id: int, pressure: float) -> None:
+        self.m2_pressure = pressure
+        await self._write_evt(evt_id=Event.M2SETPRESSURE, pressure=self.m2_pressure)
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def open_instrument_air_valve(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_open_instrument_air_valve(self, sequence_id: int) -> None:
+        self.instrument_state = ATPneumatics.AirValveState.OPENED
+        await self._write_evt(evt_id=Event.INSTRUMENTSTATE, state=self.instrument_state)
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def open_m1_cell_vents(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_open_m1_cell_vents(self, sequence_id: int) -> None:
+        if self.m1_vents_state not in [OpenCloseState.OPENING, OpenCloseState.OPEN]:
+            self.m1_vents_state = OpenCloseState.OPENING
+            if self.m1_vents_position != ATPneumatics.VentsPosition.OPENED:
+                await self.set_cell_vents_events(closed=False, opened=False)
+                await asyncio.sleep(self.cell_vents_open_time)
+            await self.set_cell_vents_events(closed=False, opened=True)
+            self.m1_vents_state = OpenCloseState.OPEN
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def open_m1_cover(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_open_m1_cover(self, sequence_id: int) -> None:
+        if self.m1_covers_state not in [OpenCloseState.OPENING, OpenCloseState.OPEN]:
+            self.m1_covers_state = OpenCloseState.OPENING
+            if self.m1_cover_state != ATPneumatics.MirrorCoverState.OPENED:
+                await self.set_m1_cover_events(closed=False, opened=False)
+                await asyncio.sleep(self.m1_covers_open_time)
+            await self.set_m1_cover_events(closed=False, opened=True)
+            self.m1_covers_state = OpenCloseState.OPEN
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def open_master_air_supply(
-        self, sequence_id: int, **kwargs: dict[str, typing.Any]
-    ) -> None:
-        # TODO DM-39012: Add simulator code.
+    async def do_open_master_air_supply(self, sequence_id: int) -> None:
+        self.main_valve_state = ATPneumatics.AirValveState.OPENED
+        await self._write_evt(evt_id=Event.MAINVALVESTATE, state=self.main_valve_state)
         await self.write_success_response(sequence_id=sequence_id)
 
     async def write_response(self, response: str, sequence_id: int) -> None:
@@ -368,7 +391,8 @@ class PneumaticsSimulator:
         await self.cmd_evt_server.write_json(data={"id": evt_id, **kwargs})
 
     async def _write_telemetry(self, tel_id: str, data: typing.Any) -> None:
-        # This needs to be cleaned up as soon as we have moved to Kafka.
+        # TODO DM-39615 This needs to be cleaned up as soon as we have moved to
+        #  Kafka.
         data_dict = data.get_vars() if hasattr(data, "get_vars") else vars(data)
         items = {k: v for k, v in data_dict.items() if not k.startswith("private")}
 
@@ -383,9 +407,8 @@ class PneumaticsSimulator:
         When the cmd/evt client disconnects, all background tasks get stopped.
         """
         if server.connected:
-            await self.start_tasks()
-        else:
-            await self.stop_tasks()
+            await self.configure()
+            await self.initialize()
 
     async def tel_connect_callback(self, server: tcpip.OneClientServer) -> None:
         """Callback function for when a tel client connects or disconnects.
@@ -399,18 +422,6 @@ class PneumaticsSimulator:
         else:
             self._telemetry_task.cancel()
 
-    async def start_tasks(self) -> None:
-        """Start background tasks and send events."""
-        await self.configure()
-        await self.initialize()
-
-    async def stop_tasks(self) -> None:
-        """Stop background tasks."""
-        self._close_m1_covers_task.cancel()
-        self._open_m1_covers_task.cancel()
-        self._close_cell_vents_task.cancel()
-        self._open_cell_vents_task.cancel()
-
     async def set_cell_vents_events(self, closed: bool, opened: bool) -> None:
         """Set m1VentsLimitSwitches, m1VentsPosition and cellVentsState events.
 
@@ -423,36 +434,33 @@ class PneumaticsSimulator:
         opened : `bool`
             Are the opened switches active?
         """
-        assert not (closed and opened)
         if not (closed or opened):
+            self.cell_vents_state = ATPneumatics.CellVentState.INMOTION
             await self._write_evt(
-                evt_id=Event.CELLVENTSTATE, state=ATPneumatics.CellVentState.INMOTION
+                evt_id=Event.CELLVENTSTATE, state=self.cell_vents_state
             )
 
+        self.m1_vents_limit_switches.ventsClosedActive = closed
+        self.m1_vents_limit_switches.ventsOpenedActive = opened
         await self._write_evt(
             evt_id=Event.M1VENTSLIMITSWITCHES,
-            ventsClosedActive=closed,
-            ventsOpenedActive=opened,
+            ventsClosedActive=self.m1_vents_limit_switches.ventsClosedActive,
+            ventsOpenedActive=self.m1_vents_limit_switches.ventsOpenedActive,
         )
         if opened:
-            await self._write_evt(
-                evt_id=Event.M1VENTSPOSITION, position=ATPneumatics.VentsPosition.OPENED
-            )
-            await self._write_evt(
-                evt_id=Event.CELLVENTSTATE, state=ATPneumatics.CellVentState.OPENED
-            )
+            self.m1_vents_position = ATPneumatics.VentsPosition.OPENED
         elif closed:
-            await self._write_evt(
-                evt_id=Event.M1VENTSPOSITION, position=ATPneumatics.VentsPosition.CLOSED
-            )
-            await self._write_evt(
-                evt_id=Event.CELLVENTSTATE, state=ATPneumatics.CellVentState.CLOSED
-            )
+            self.m1_vents_position = ATPneumatics.VentsPosition.CLOSED
         else:
-            await self._write_evt(
-                evt_id=Event.M1VENTSPOSITION,
-                position=ATPneumatics.VentsPosition.PARTIALLYOPENED,
-            )
+            self.m1_vents_position = ATPneumatics.VentsPosition.PARTIALLYOPENED
+        await self._write_evt(
+            evt_id=Event.M1VENTSPOSITION, position=self.m1_vents_position
+        )
+        if opened:
+            self.cell_vents_state = ATPneumatics.CellVentState.OPENED
+        elif closed:
+            self.cell_vents_state = ATPneumatics.CellVentState.CLOSED
+        await self._write_evt(evt_id=Event.CELLVENTSTATE, state=self.cell_vents_state)
 
     async def set_m1_cover_events(self, closed: bool, opened: bool) -> None:
         """Set m1CoverLimitSwitches and m1CoverState events.
@@ -466,33 +474,24 @@ class PneumaticsSimulator:
         opened : `bool`
             Are the opened switches active?
         """
-        await self._write_evt(
-            evt_id=Event.M1COVERLIMITSWITCHES,
-            cover1ClosedActive=closed,
-            cover2ClosedActive=closed,
-            cover3ClosedActive=closed,
-            cover4ClosedActive=closed,
-            cover1OpenedActive=opened,
-            cover2OpenedActive=opened,
-            cover3OpenedActive=opened,
-            cover4OpenedActive=opened,
-        )
+        kwargs = dict()
+        for num in range(1, 5):
+            closed_attr_name = f"cover{num}ClosedActive"
+            opened_attr_name = f"cover{num}OpenedActive"
+            setattr(self.m1_cover_limit_switches, closed_attr_name, closed)
+            setattr(self.m1_cover_limit_switches, opened_attr_name, opened)
+            kwargs[closed_attr_name] = closed
+            kwargs[opened_attr_name] = opened
+        await self._write_evt(evt_id=Event.M1COVERLIMITSWITCHES, **kwargs)
         if opened and closed:
-            await self._write_evt(
-                evt_id=Event.M1COVERSTATE, state=ATPneumatics.MirrorCoverState.INVALID
-            )
+            self.m1_cover_state = ATPneumatics.MirrorCoverState.INVALID
         elif opened:
-            await self._write_evt(
-                evt_id=Event.M1COVERSTATE, state=ATPneumatics.MirrorCoverState.OPENED
-            )
+            self.m1_cover_state = ATPneumatics.MirrorCoverState.OPENED
         elif closed:
-            await self._write_evt(
-                evt_id=Event.M1COVERSTATE, state=ATPneumatics.MirrorCoverState.CLOSED
-            )
+            self.m1_cover_state = ATPneumatics.MirrorCoverState.CLOSED
         else:
-            await self._write_evt(
-                evt_id=Event.M1COVERSTATE, state=ATPneumatics.MirrorCoverState.INMOTION
-            )
+            self.m1_cover_state = ATPneumatics.MirrorCoverState.INMOTION
+        await self._write_evt(evt_id=Event.M1COVERSTATE, state=self.m1_cover_state)
 
     async def telemetry_loop(self) -> None:
         """Output telemetry and events that have changed
@@ -516,15 +515,15 @@ class PneumaticsSimulator:
         """Output all telemetry data messages."""
         try:
             opened_state = ATPneumatics.AirValveState.OPENED
-            main_valve_open = self.main_valve_state_data == opened_state
+            main_valve_open = self.main_valve_state == opened_state
 
-            if main_valve_open and self.m1_state_data == opened_state:
-                self.m1_air_pressure.pressure = self.m1_set_pressure_data
+            if main_valve_open and self.m1_state == opened_state:
+                self.m1_air_pressure.pressure = self.m1_pressure
             else:
                 self.m1_air_pressure.pressure = 0
 
-            if main_valve_open and self.m2_state_data == opened_state:
-                self.m2_air_pressure.pressure = self.m2_set_pressure_data
+            if main_valve_open and self.m2_state == opened_state:
+                self.m2_air_pressure.pressure = self.m2_pressure
             else:
                 self.m2_air_pressure.pressure = 0
 
@@ -547,19 +546,6 @@ class PneumaticsSimulator:
         except Exception as e:
             print(f"update_telemetry failed: {e}")
             raise
-
-    def __enter__(self) -> None:
-        # This class only implements an async context manager.
-        raise NotImplementedError("Use 'async with' instead.")
-
-    def __exit__(
-        self,
-        type: typing.Type[BaseException],
-        value: BaseException,
-        traceback: types.TracebackType,
-    ) -> None:
-        # __exit__ should exist in pair with __enter__ but never be executed.
-        raise NotImplementedError("Use 'async with' instead.")
 
     async def __aenter__(self) -> PneumaticsSimulator:
         return self

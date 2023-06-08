@@ -19,7 +19,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["LoadCell", "M1AirPressure", "M2AirPressure", "MainAirSourcePressure"]
+__all__ = [
+    "LoadCell",
+    "M1AirPressure",
+    "M1CoverLimitSwitches",
+    "M1VentsLimitSwitches",
+    "M2AirPressure",
+    "MainAirSourcePressure",
+    "PowerStatus",
+]
 
 from dataclasses import dataclass
 
@@ -57,6 +65,56 @@ class M1AirPressure:
 
 
 @dataclass
+class M1CoverLimitSwitches:
+    """Dataclass holding state of each of the 4 M1 mirror cover petals data.
+
+    Attributes
+    ----------
+    cover1ClosedActive : bool
+        True if cover/petal 1 closed.
+    cover2ClosedActive : bool
+        True if cover/petal 2 closed.
+    cover3ClosedActive : bool
+        True if cover/petal 3 closed.
+    cover4ClosedActive : bool
+        True if cover/petal 4 closed.
+    cover1OpenedActive : bool
+        True if cover/petal 1 open.
+    cover2OpenedActive : bool
+        True if cover/petal 2 open.
+    cover3OpenedActive : bool
+        True if cover/petal 3 open.
+    cover4OpenedActive : bool
+        True if cover/petal 4 open.
+    """
+
+    cover1ClosedActive: bool = False
+    cover2ClosedActive: bool = False
+    cover3ClosedActive: bool = False
+    cover4ClosedActive: bool = False
+    cover1OpenedActive: bool = False
+    cover2OpenedActive: bool = False
+    cover3OpenedActive: bool = False
+    cover4OpenedActive: bool = False
+
+
+@dataclass
+class M1VentsLimitSwitches:
+    """Dataclass holding M1 vents open/closed data.
+
+    Attributes
+    ----------
+    ventsClosedActive : bool
+        True if M1 vents closed.
+    ventsOpenedActive : bool
+        True if M1 vents open.
+    """
+
+    ventsClosedActive: bool = False
+    ventsOpenedActive: bool = False
+
+
+@dataclass
 class M2AirPressure:
     """Dataclass holding measured pressure in air line to M2 pneumatic
     actuators data.
@@ -82,3 +140,22 @@ class MainAirSourcePressure:
     """
 
     pressure: float = 0.0
+
+
+@dataclass
+class PowerStatus:
+    """Dataclass holding state of circuit breakers for ATMCS drives data.
+
+    Attributes
+    ----------
+    powerOnL1 : bool
+        Status Power line 1, Azimuth motors 1 and 2.
+    powerOnL1 : bool
+        Status Power line 2, Elevation and M3 rotator.
+    powerOnL1 : bool
+        Status Power line 3, Nasmyth ports 1 and 2.
+    """
+
+    powerOnL1: bool = False
+    powerOnL2: bool = False
+    powerOnL3: bool = False

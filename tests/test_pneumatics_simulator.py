@@ -113,7 +113,6 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
         assert data[atpneumaticssimulator.CommandKey.ID] == ack
         assert data[atpneumaticssimulator.CommandKey.SEQUENCE_ID] == sequence_id
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_close_instrument_air_valve(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -131,17 +130,22 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.INSTRUMENTSTATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_close_m1_cell_vents(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
         ) as cmd_evt_client:
+            # Mock a state where the M1 vents are open.
+            simulator.m1_vents_state = atpneumaticssimulator.OpenCloseState.OPEN
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -155,17 +159,30 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1VENTSLIMITSWITCHES,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1VENTSPOSITION,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.CELLVENTSTATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_close_m1_cover(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
         ) as cmd_evt_client:
+            # Mock a state where the M1 covers are open.
+            simulator.m1_covers_state = atpneumaticssimulator.OpenCloseState.OPEN
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -179,13 +196,20 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1COVERLIMITSWITCHES,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1COVERSTATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_close_master_air_supply(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -203,13 +227,16 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.MAINVALVESTATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_m1_close_air_valve(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -227,13 +254,16 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1STATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_m1_open_air_valve(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -251,13 +281,16 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1STATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_m1_set_pressure(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -275,13 +308,16 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1SETPRESSURE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_m2_close_air_valve(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -299,13 +335,16 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M2STATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_m2_open_air_valve(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -323,13 +362,16 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M2STATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_m2_set_pressure(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -347,13 +389,16 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M2SETPRESSURE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_open_instrument_air_valve(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -371,17 +416,22 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.INSTRUMENTSTATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_open_m1_cell_vents(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
         ) as cmd_evt_client:
+            # Set a much shorter time to speed up the unit test.
+            simulator.cell_vents_open_time = 0.1
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -395,17 +445,46 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.CELLVENTSTATE,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1VENTSLIMITSWITCHES,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1VENTSPOSITION,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.CELLVENTSTATE,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1VENTSLIMITSWITCHES,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1VENTSPOSITION,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.CELLVENTSTATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_open_m1_cover(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
         ) as cmd_evt_client:
+            # Set a much shorter time to speed up the unit test.
+            simulator.m1_covers_open_time = 0.1
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -419,13 +498,28 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1COVERLIMITSWITCHES,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1COVERSTATE,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1COVERLIMITSWITCHES,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.M1COVERSTATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_open_master_air_supply(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -443,13 +537,16 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
             )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.MAINVALVESTATE,
+            )
             await self.verify_command_response(
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_non_existing_command(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -467,7 +564,6 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 sequence_id=sequence_id,
             )
 
-    # TODO DM-39012: Improve this test after adding the simulator code.
     async def test_skip_sequence_id(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
             simulator
@@ -484,6 +580,10 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 client=cmd_evt_client,
                 ack=atpneumaticssimulator.Ack.ACK,
                 sequence_id=sequence_id,
+            )
+            await self.verify_event(
+                client=cmd_evt_client,
+                evt_name=atpneumaticssimulator.Event.INSTRUMENTSTATE,
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
@@ -510,7 +610,8 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
         async with self.create_pneumatics_simulator() as simulator, self.create_telemetry_client(
             simulator
         ) as telemetry_client:
-            await simulator.update_telemetry()
+            # No need to call simulator.update_telemetry directly as the it
+            # will be called by the  background telemetry loop.
             for _ in atpneumaticssimulator.Telemetry:
                 data = await telemetry_client.read_json()
                 # No need for asserts here. If the data id is not present in
