@@ -19,20 +19,50 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from enum import Enum
+import enum
 
-__all__ = ["Ack", "CommandKey"]
+__all__ = ["Ack", "CommandKey", "Event", "OpenCloseState", "Telemetry"]
 
 
-class Ack(str, Enum):
+class Ack(str, enum.Enum):
     ACK = "ack"
     FAIL = "fail"
     NOACK = "noack"
     SUCCESS = "success"
 
 
-class CommandKey(str, Enum):
+class CommandKey(str, enum.Enum):
     ID = "id"
     PRESSURE = "pressure"
     SEQUENCE_ID = "sequence_id"
     VALUE = "value"
+
+
+class Event(str, enum.Enum):
+    CELLVENTSTATE = "cellVentsState"
+    ESTOP = "eStop"
+    INSTRUMENTSTATE = "instrumentState"
+    M1COVERLIMITSWITCHES = "m1CoverLimitSwitches"
+    M1COVERSTATE = "m1CoverState"
+    M1SETPRESSURE = "m1SetPressure"
+    M1STATE = "m1State"
+    M1VENTSLIMITSWITCHES = "m1VentsLimitSwitches"
+    M1VENTSPOSITION = "m1VentsPosition"
+    M2STATE = "m2State"
+    M2SETPRESSURE = "m2SetPressure"
+    MAINVALVESTATE = "mainValveState"
+    POWERSTATUS = "powerStatus"
+
+
+class OpenCloseState(enum.Enum):
+    CLOSING = enum.auto()
+    CLOSED = enum.auto()
+    OPENING = enum.auto()
+    OPEN = enum.auto()
+
+
+class Telemetry(str, enum.Enum):
+    LOAD_CELL = "loadCell"
+    M1_AIR_PRESSURE = "m1AirPressure"
+    M2_AIR_PRESSURE = "m2AirPressure"
+    MAIN_AIR_SOURCE_PRESSURE = "mainAirSourcePressure"

@@ -12,6 +12,7 @@ v2.0.0
 * Modernize Jenkinsfile.
 * Add JSON schemas for command, event and telemetry exchange via TCP/IP.
 * Add Pneumatics simulator and simulator server for testing the TCP/IP interaction with the real ATPneumatics server.
+* * Move simulation code mostly unchanged from the CSC to the simulator.
 
 Requirements:
 
