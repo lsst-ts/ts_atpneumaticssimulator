@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "const": "m2State"
+            "const": "evt_m2State"
         },
         "state": {
             "type": "number",

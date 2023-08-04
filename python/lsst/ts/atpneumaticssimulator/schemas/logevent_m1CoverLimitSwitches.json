@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "const": "m1CoverLimitSwitches"
+            "const": "evt_m1CoverLimitSwitches"
         },
         "cover1ClosedActive": {
             "type": "boolean",

@@ -21,7 +21,7 @@
 
 import enum
 
-__all__ = ["Ack", "CommandKey", "Event", "OpenCloseState", "Telemetry"]
+__all__ = ["Ack", "Command", "CommandArgument", "Event", "OpenCloseState", "Telemetry"]
 
 
 class Ack(str, enum.Enum):
@@ -31,7 +31,28 @@ class Ack(str, enum.Enum):
     SUCCESS = "success"
 
 
-class CommandKey(str, enum.Enum):
+class Command(str, enum.Enum):
+    """Enum containing all command names."""
+
+    CLOSE_INSTRUMENT_AIR_VALE = "cmd_closeInstrumentAirValve"
+    CLOSE_M1_CELL_VENTS = "cmd_closeM1CellVents"
+    CLOSE_M1_COVER = "cmd_closeM1Cover"
+    CLOSE_MASTER_AIR_SUPPLY = "cmd_closeMasterAirSupply"
+    M1_CLOSE_AIR_VALVE = "cmd_m1CloseAirValve"
+    M1_OPEN_AIR_VALVE = "cmd_m1OpenAirValve"
+    M1_SET_PRESSURE = "cmd_m1SetPressure"
+    M2_CLOSE_AIR_VALVE = "cmd_m2CloseAirValve"
+    M2_OPEN_AIR_VALVE = "cmd_m2OpenAirValve"
+    M2_SET_PRESSURE = "cmd_m2SetPressure"
+    OPEN_INSTRUMENT_AIR_VALVE = "cmd_openInstrumentAirValve"
+    OPEN_M1_CELL_VENTS = "cmd_openM1CellVents"
+    OPEN_M1_COVER = "cmd_openM1Cover"
+    OPEN_MASTER_AIR_SUPPLY = "cmd_openMasterAirSupply"
+
+
+class CommandArgument(str, enum.Enum):
+    """Enum containing all possible command arguments."""
+
     ID = "id"
     PRESSURE = "pressure"
     SEQUENCE_ID = "sequence_id"
@@ -39,19 +60,19 @@ class CommandKey(str, enum.Enum):
 
 
 class Event(str, enum.Enum):
-    CELLVENTSTATE = "cellVentsState"
-    ESTOP = "eStop"
-    INSTRUMENTSTATE = "instrumentState"
-    M1COVERLIMITSWITCHES = "m1CoverLimitSwitches"
-    M1COVERSTATE = "m1CoverState"
-    M1SETPRESSURE = "m1SetPressure"
-    M1STATE = "m1State"
-    M1VENTSLIMITSWITCHES = "m1VentsLimitSwitches"
-    M1VENTSPOSITION = "m1VentsPosition"
-    M2STATE = "m2State"
-    M2SETPRESSURE = "m2SetPressure"
-    MAINVALVESTATE = "mainValveState"
-    POWERSTATUS = "powerStatus"
+    CELLVENTSTATE = "evt_cellVentsState"
+    ESTOP = "evt_eStop"
+    INSTRUMENTSTATE = "evt_instrumentState"
+    M1COVERLIMITSWITCHES = "evt_m1CoverLimitSwitches"
+    M1COVERSTATE = "evt_m1CoverState"
+    M1SETPRESSURE = "evt_m1SetPressure"
+    M1STATE = "evt_m1State"
+    M1VENTSLIMITSWITCHES = "evt_m1VentsLimitSwitches"
+    M1VENTSPOSITION = "evt_m1VentsPosition"
+    M2STATE = "evt_m2State"
+    M2SETPRESSURE = "evt_m2SetPressure"
+    MAINVALVESTATE = "evt_mainValveState"
+    POWERSTATUS = "evt_powerStatus"
 
 
 class OpenCloseState(enum.Enum):
@@ -62,7 +83,7 @@ class OpenCloseState(enum.Enum):
 
 
 class Telemetry(str, enum.Enum):
-    LOAD_CELL = "loadCell"
-    M1_AIR_PRESSURE = "m1AirPressure"
-    M2_AIR_PRESSURE = "m2AirPressure"
-    MAIN_AIR_SOURCE_PRESSURE = "mainAirSourcePressure"
+    LOAD_CELL = "tel_loadCell"
+    M1_AIR_PRESSURE = "tel_m1AirPressure"
+    M2_AIR_PRESSURE = "tel_m2AirPressure"
+    MAIN_AIR_SOURCE_PRESSURE = "tel_mainAirSourcePressure"

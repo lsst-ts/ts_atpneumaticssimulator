@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "const": "mainValveState"
+            "const": "evt_mainValveState"
         },
         "state": {
             "type": "number",

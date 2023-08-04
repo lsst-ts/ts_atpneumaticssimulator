@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "const": "cellVentsState"
+            "const": "evt_cellVentsState"
         },
         "state": {
             "type": "number",

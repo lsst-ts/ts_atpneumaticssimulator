@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "const": "instrumentState"
+            "const": "evt_instrumentState"
         },
         "state": {
             "type": "number",

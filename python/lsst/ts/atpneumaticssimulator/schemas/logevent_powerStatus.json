@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "const": "powerStatus"
+            "const": "evt_powerStatus"
         },
         "powerOnL1": {
             "type": "boolean",

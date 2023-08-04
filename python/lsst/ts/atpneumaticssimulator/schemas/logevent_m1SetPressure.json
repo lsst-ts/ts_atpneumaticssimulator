@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "const": "m1SetPressure"
+            "const": "evt_m1SetPressure"
         },
         "pressure": {
             "type": "number",
