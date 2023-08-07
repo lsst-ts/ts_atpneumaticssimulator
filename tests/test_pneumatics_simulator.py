@@ -48,7 +48,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             yield simulator
 
     @contextlib.asynccontextmanager
-    async def create_evt_cmd_client(
+    async def create_cmd_evt_client(
         self, simulator: atpneumaticssimulator.PneumaticsSimulator
     ) -> typing.AsyncGenerator[tcpip.Client, None]:
         async with tcpip.Client(
@@ -116,7 +116,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
         assert data[atpneumaticssimulator.CommandArgument.SEQUENCE_ID] == sequence_id
 
     async def test_close_instrument_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -143,7 +143,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_close_m1_cell_vents(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             # Mock a state where the M1 vents are open.
@@ -180,7 +180,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_close_m1_cover(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             # Mock a state where the M1 covers are open.
@@ -213,7 +213,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_close_master_air_supply(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -240,7 +240,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m1_close_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -267,7 +267,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m1_open_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -294,7 +294,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m1_set_pressure(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -321,7 +321,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m2_close_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -348,7 +348,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m2_open_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -375,7 +375,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m2_set_pressure(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -402,7 +402,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_instrument_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -429,7 +429,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_m1_cell_vents(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             # Set a much shorter time to speed up the unit test.
@@ -482,7 +482,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_m1_cover(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             # Set a much shorter time to speed up the unit test.
@@ -523,7 +523,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_master_air_supply(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -550,7 +550,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_non_existing_command(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -567,7 +567,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_skip_sequence_id(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
@@ -609,11 +609,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_update_telemetry(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_telemetry_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
+            simulator
+        ), self.create_telemetry_client(
             simulator
         ) as telemetry_client:
-            # No need to call simulator.update_telemetry directly as the it
-            # will be called by the  background telemetry loop.
+            # No need to call ``simulator.update_telemetry`` explicitly since
+            # connecting with a cmd_evt_client starts the event and telemetry
+            # loop.
             for _ in atpneumaticssimulator.Telemetry:
                 data = await telemetry_client.read_json()
                 # No need for asserts here. If the data id is not present in
