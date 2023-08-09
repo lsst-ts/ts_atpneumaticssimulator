@@ -24,6 +24,7 @@ try:
 except ModuleNotFoundError:
     __version__ = "?"
 
+from .command_issued import *
 from .dataclasses import *
 from .enums import *
 from .pneumatics_csc import *

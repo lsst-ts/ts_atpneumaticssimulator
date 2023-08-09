@@ -145,7 +145,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
         desired_close_time = 0.4  # sec
         desired_open_time = 0.8  # sec
         async with self.make_csc(initial_state=salobj.State.ENABLED):
-            await self.csc.configure(
+            await self.csc.pneumatics_simulator.configure(
                 cell_vents_close_time=desired_close_time,
                 cell_vents_open_time=desired_open_time,
             )
@@ -251,7 +251,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
         desired_close_time = 0.4  # sec
         desired_open_time = 0.8  # sec
         async with self.make_csc(initial_state=salobj.State.ENABLED):
-            await self.csc.configure(
+            await self.csc.pneumatics_simulator.configure(
                 m1_covers_close_time=desired_close_time,
                 m1_covers_open_time=desired_open_time,
             )
@@ -369,7 +369,7 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             self.csc.telemetry_interval = 0.1
             init_m1_pressure = 5
             init_m2_pressure = 6
-            await self.csc.configure(
+            await self.csc.pneumatics_simulator.configure(
                 m1_pressure=init_m1_pressure,
                 m2_pressure=init_m2_pressure,
             )

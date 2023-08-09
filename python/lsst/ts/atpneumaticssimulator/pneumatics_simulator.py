@@ -269,11 +269,9 @@ class PneumaticsSimulator:
             return False
 
         sequence_id = data[CommandArgument.SEQUENCE_ID]
-        if self.last_sequence_id == 0:
-            self.last_sequence_id = sequence_id
-        else:
-            if sequence_id - self.last_sequence_id != 1:
-                return False
+        if sequence_id - self.last_sequence_id != 1:
+            return False
+        self.last_sequence_id = sequence_id
 
         json_schema = registry[payload_id]
         try:
