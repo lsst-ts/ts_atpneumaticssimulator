@@ -21,6 +21,8 @@
 
 from __future__ import annotations
 
+__all__ = ["PneumaticsSimulator"]
+
 import asyncio
 import logging
 import types
@@ -39,13 +41,11 @@ from .dataclasses import (
     MainAirSourcePressure,
     PowerStatus,
 )
-from .enums import Ack, CommandKey, Event, OpenCloseState, Telemetry
+from .enums import Ack, Command, CommandArgument, Event, OpenCloseState, Telemetry
 from .pneumatics_server_simulator import PneumaticsServerSimulator
 from .schemas.registry import registry
 
-__all__ = ["PneumaticsSimulator"]
-
-CMD_ITEMS_TO_IGNORE = frozenset({CommandKey.ID, CommandKey.VALUE})
+CMD_ITEMS_TO_IGNORE = frozenset({CommandArgument.ID, CommandArgument.VALUE})
 
 
 class PneumaticsSimulator:
@@ -116,20 +116,20 @@ class PneumaticsSimulator:
 
         # Dict of command: function.
         self.dispatch_dict: dict[str, typing.Callable] = {
-            "closeInstrumentAirValve": self.do_close_instrument_air_valve,
-            "closeM1CellVents": self.do_close_m1_cell_vents,
-            "closeM1Cover": self.do_close_m1_cover,
-            "closeMasterAirSupply": self.do_close_master_air_supply,
-            "m1CloseAirValve": self.do_m1_close_air_valve,
-            "m1OpenAirValve": self.do_m1_open_air_valve,
-            "m1SetPressure": self.do_m1_set_pressure,
-            "m2CloseAirValve": self.do_m2_close_air_valve,
-            "m2OpenAirValve": self.do_m2_open_air_valve,
-            "m2SetPressure": self.do_m2_set_pressure,
-            "openInstrumentAirValve": self.do_open_instrument_air_valve,
-            "openM1CellVents": self.do_open_m1_cell_vents,
-            "openM1Cover": self.do_open_m1_cover,
-            "openMasterAirSupply": self.do_open_master_air_supply,
+            Command.CLOSE_INSTRUMENT_AIR_VALE: self.do_close_instrument_air_valve,
+            Command.CLOSE_M1_CELL_VENTS: self.do_close_m1_cell_vents,
+            Command.CLOSE_M1_COVER: self.do_close_m1_cover,
+            Command.CLOSE_MASTER_AIR_SUPPLY: self.do_close_master_air_supply,
+            Command.M1_CLOSE_AIR_VALVE: self.do_m1_close_air_valve,
+            Command.M1_OPEN_AIR_VALVE: self.do_m1_open_air_valve,
+            Command.M1_SET_PRESSURE: self.do_m1_set_pressure,
+            Command.M2_CLOSE_AIR_VALVE: self.do_m2_close_air_valve,
+            Command.M2_OPEN_AIR_VALVE: self.do_m2_open_air_valve,
+            Command.M2_SET_PRESSURE: self.do_m2_set_pressure,
+            Command.OPEN_INSTRUMENT_AIR_VALVE: self.do_open_instrument_air_valve,
+            Command.OPEN_M1_CELL_VENTS: self.do_open_m1_cell_vents,
+            Command.OPEN_M1_COVER: self.do_open_m1_cover,
+            Command.OPEN_MASTER_AIR_SUPPLY: self.do_open_master_air_supply,
         }
 
     # TODO DM-38912 Make this configurable.
@@ -225,12 +225,14 @@ class PneumaticsSimulator:
     async def cmd_evt_dispatch_callback(self, data: typing.Any) -> None:
         data_ok = await self.verify_data(data=data)
         if not data_ok:
-            await self.write_noack_response(sequence_id=data[CommandKey.SEQUENCE_ID])
+            await self.write_noack_response(
+                sequence_id=data[CommandArgument.SEQUENCE_ID]
+            )
             return
 
-        await self.write_ack_response(sequence_id=data[CommandKey.SEQUENCE_ID])
+        await self.write_ack_response(sequence_id=data[CommandArgument.SEQUENCE_ID])
 
-        cmd = data[CommandKey.ID].replace("cmd_", "")
+        cmd = data[CommandArgument.ID]
         func = self.dispatch_dict[cmd]
         kwargs = {
             key: value for key, value in data.items() if key not in CMD_ITEMS_TO_IGNORE
@@ -258,20 +260,18 @@ class PneumaticsSimulator:
             Whether the data follows the correct format and has the correct
             contents or not.
         """
-        if CommandKey.ID not in data or CommandKey.SEQUENCE_ID not in data:
+        if CommandArgument.ID not in data or CommandArgument.SEQUENCE_ID not in data:
             self.log.error(f"Received invalid {data=}. Ignoring.")
             return False
-        payload_id = data[CommandKey.ID].replace("cmd_", "command_")
+        payload_id = data[CommandArgument.ID].replace("cmd_", "command_")
         if payload_id not in registry:
             self.log.error(f"Unknown command in {data=}.")
             return False
 
-        sequence_id = data[CommandKey.SEQUENCE_ID]
-        if self.last_sequence_id == 0:
-            self.last_sequence_id = sequence_id
-        else:
-            if sequence_id - self.last_sequence_id != 1:
-                return False
+        sequence_id = data[CommandArgument.SEQUENCE_ID]
+        if sequence_id - self.last_sequence_id != 1:
+            return False
+        self.last_sequence_id = sequence_id
 
         json_schema = registry[payload_id]
         try:
@@ -372,7 +372,7 @@ class PneumaticsSimulator:
         await self.write_success_response(sequence_id=sequence_id)
 
     async def write_response(self, response: str, sequence_id: int) -> None:
-        data = {CommandKey.ID: response, CommandKey.SEQUENCE_ID: sequence_id}
+        data = {CommandArgument.ID: response, CommandArgument.SEQUENCE_ID: sequence_id}
         await self.cmd_evt_server.write_json(data=data)
 
     async def write_ack_response(self, sequence_id: int) -> None:

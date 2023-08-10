@@ -48,7 +48,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             yield simulator
 
     @contextlib.asynccontextmanager
-    async def create_evt_cmd_client(
+    async def create_cmd_evt_client(
         self, simulator: atpneumaticssimulator.PneumaticsSimulator
     ) -> typing.AsyncGenerator[tcpip.Client, None]:
         async with tcpip.Client(
@@ -98,7 +98,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             # No need for asserts here. If the data id is not present in
             # registry or the validation of the schema fails, the test will
             # fail as well.
-            json_schema = atpneumaticssimulator.registry[f"logevent_{data['id']}"]
+            json_schema = atpneumaticssimulator.registry[
+                f"logevent_{data['id'].removeprefix('evt_')}"
+            ]
             jsonschema.validate(data, json_schema)
 
     async def verify_command_response(
@@ -108,21 +110,21 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
         sequence_id: int,
     ) -> None:
         data = await client.read_json()
-        assert atpneumaticssimulator.CommandKey.ID in data
-        assert atpneumaticssimulator.CommandKey.SEQUENCE_ID in data
-        assert data[atpneumaticssimulator.CommandKey.ID] == ack
-        assert data[atpneumaticssimulator.CommandKey.SEQUENCE_ID] == sequence_id
+        assert atpneumaticssimulator.CommandArgument.ID in data
+        assert atpneumaticssimulator.CommandArgument.SEQUENCE_ID in data
+        assert data[atpneumaticssimulator.CommandArgument.ID] == ack
+        assert data[atpneumaticssimulator.CommandArgument.SEQUENCE_ID] == sequence_id
 
     async def test_close_instrument_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_closeInstrumentAirValve",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeInstrumentAirValve",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -141,7 +143,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_close_m1_cell_vents(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             # Mock a state where the M1 vents are open.
@@ -149,9 +151,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_closeM1CellVents",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeM1CellVents",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -178,7 +180,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_close_m1_cover(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             # Mock a state where the M1 covers are open.
@@ -186,9 +188,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_closeM1Cover",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeM1Cover",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -211,15 +213,15 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_close_master_air_supply(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_closeMasterAirSupply",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeMasterAirSupply",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -238,15 +240,15 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m1_close_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_m1CloseAirValve",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_m1CloseAirValve",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -265,15 +267,15 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m1_open_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_m1OpenAirValve",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_m1OpenAirValve",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -292,15 +294,15 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m1_set_pressure(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_m1SetPressure",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.PRESSURE: 0.0,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_m1SetPressure",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.PRESSURE: 0.0,
                 }
             )
             await self.verify_command_response(
@@ -319,15 +321,15 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m2_close_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_m2CloseAirValve",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_m2CloseAirValve",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -346,15 +348,15 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m2_open_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_m2OpenAirValve",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_m2OpenAirValve",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -373,15 +375,15 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m2_set_pressure(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_m2SetPressure",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.PRESSURE: 0.0,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_m2SetPressure",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.PRESSURE: 0.0,
                 }
             )
             await self.verify_command_response(
@@ -400,15 +402,15 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_instrument_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_openInstrumentAirValve",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_openInstrumentAirValve",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -427,7 +429,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_m1_cell_vents(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             # Set a much shorter time to speed up the unit test.
@@ -435,9 +437,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_openM1CellVents",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_openM1CellVents",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -480,7 +482,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_m1_cover(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             # Set a much shorter time to speed up the unit test.
@@ -488,9 +490,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_openM1Cover",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_openM1Cover",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -521,15 +523,15 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_master_air_supply(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_openMasterAirSupply",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_openMasterAirSupply",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -548,14 +550,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_non_existing_command(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "non-existing",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.ID: "non-existing",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
                 }
             )
             await self.verify_command_response(
@@ -565,15 +567,15 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_skip_sequence_id(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_evt_cmd_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
             simulator
         ) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_closeInstrumentAirValve",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeInstrumentAirValve",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -595,9 +597,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 3
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandKey.ID: "cmd_closeInstrumentAirValve",
-                    atpneumaticssimulator.CommandKey.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandKey.VALUE: True,
+                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeInstrumentAirValve",
+                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    atpneumaticssimulator.CommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
@@ -607,15 +609,18 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_update_telemetry(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_telemetry_client(
+        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
+            simulator
+        ), self.create_telemetry_client(
             simulator
         ) as telemetry_client:
-            # No need to call simulator.update_telemetry directly as the it
-            # will be called by the  background telemetry loop.
+            # No need to call ``simulator.update_telemetry`` explicitly since
+            # connecting with a cmd_evt_client starts the event and telemetry
+            # loop.
             for _ in atpneumaticssimulator.Telemetry:
                 data = await telemetry_client.read_json()
                 # No need for asserts here. If the data id is not present in
                 # registry or the validation of the schema fails, the test will
                 # fail as well.
-                json_schema = atpneumaticssimulator.registry[f"tel_{data['id']}"]
+                json_schema = atpneumaticssimulator.registry[f"{data['id']}"]
                 jsonschema.validate(data, json_schema)

@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "const": "m1VentsLimitSwitches"
+            "const": "evt_m1VentsLimitSwitches"
         },
         "ventsClosedActive": {
             "type": "boolean",

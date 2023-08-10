@@ -12,12 +12,13 @@ v2.0.0
 * Modernize Jenkinsfile.
 * Add JSON schemas for command, event and telemetry exchange via TCP/IP.
 * Add Pneumatics simulator and simulator server for testing the TCP/IP interaction with the real ATPneumatics server.
-* * Move simulation code mostly unchanged from the CSC to the simulator.
+* Move simulation code mostly unchanged from the CSC to the simulator.
+* Remove all simulator code from the CSC and connect to the simulator via TCP/IP.
 
 Requirements:
 
 * ts_salobj 7.1
-* ts_tcpip 1.1
+* ts_tcpip 1.2
 * ts_utils 1
 * ts_idl 2
 * IDL file for ATPneumatics built from ts_xml 11

@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "const": "loadCell"
+            "const": "tel_loadCell"
         },
         "cellLoad": {
             "type": "number",

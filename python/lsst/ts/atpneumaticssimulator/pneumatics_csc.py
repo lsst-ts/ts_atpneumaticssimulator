@@ -22,11 +22,14 @@
 __all__ = ["ATPneumaticsCsc", "run_atpneumatics_simulator"]
 
 import asyncio
+from typing import Any
 
-from lsst.ts import salobj, utils
-from lsst.ts.idl.enums import ATPneumatics
+from lsst.ts import salobj, tcpip, utils
 
 from . import __version__
+from .command_issued import CommandIssued
+from .enums import Ack, Command, CommandArgument
+from .pneumatics_simulator import PneumaticsSimulator
 
 
 class ATPneumaticsCsc(salobj.BaseCsc):
@@ -63,376 +66,287 @@ class ATPneumaticsCsc(salobj.BaseCsc):
         super().__init__(
             name="ATPneumatics", index=0, initial_state=initial_state, simulation_mode=1
         )
-        # Interval between telemetry updates.
-        self.telemetry_interval = 1.0
 
-        # Tasks used to run the methods that simulate
-        # opening and closing M1 covers and cell vents.
-        self._close_m1_covers_task = utils.make_done_future()
-        self._open_m1_covers_task = utils.make_done_future()
-        self._close_cell_vents_task = utils.make_done_future()
-        self._open_cell_vents_task = utils.make_done_future()
+        # TCP/IP clients for commands/events and for telemetry.
+        self.cmd_evt_client = tcpip.Client(host="", port=None, log=self.log)
+        self.telemetry_client = tcpip.Client(host="", port=None, log=self.log)
 
-        # TODO DM-38912 Make this CSC configurable.
-        # Configuration items.
-        self.m1_covers_close_time = 0.0
-        self.m1_covers_open_time = 0.0
-        self.cell_vents_close_time = 0.0
-        self.cell_vents_open_time = 0.0
-        self.main_pressure = 0.0
-        self.cell_load = 0.0
+        # PenumaticsSimulator for simulation_mode == 1.
+        self.pneumatics_simulator = PneumaticsSimulator()
 
-    async def close_tasks(self) -> None:
-        await super().close_tasks()
-        self._close_m1_covers_task.cancel()
-        self._open_m1_covers_task.cancel()
-        self._close_cell_vents_task.cancel()
-        self._open_cell_vents_task.cancel()
+        # Task for receiving event messages.
+        self._event_task = utils.make_done_future()
+        # Task for receiving telemetry messages.
+        self._telemetry_task = utils.make_done_future()
 
-    async def start(self) -> None:
-        await super().start()
-        await self.configure()
-        await self.initialize()
+        # Keep track of the issued commands.
+        self.commands_issued: dict[int, CommandIssued] = {}
 
-    # TODO DM-38912 Make this CSC configurable.
-    async def configure(
-        self,
-        m1_covers_close_time: float = 20.0,
-        m1_covers_open_time: float = 20.0,
-        cell_vents_close_time: float = 5.0,
-        cell_vents_open_time: float = 1.0,
-        m1_pressure: float = 5.0,
-        m2_pressure: float = 6.0,
-        main_pressure: float = 10.0,
-        cell_load: float = 100.0,
-    ) -> None:
-        """Configure the CSC.
+        # Keep track of unrecognized telemetry topics.
+        self.unrecognized_telemetry_topics: set[str] = set()
 
-        Parameters
-        ----------
-        m1_covers_close_time : `float`
-            Time to close M1 mirror covers (sec)
-        m1_covers_open_time : `float`
-            Time to open M1 mirror covers (sec)
-        cell_vents_close_time : `float`
-            Time to close cell vents (sec)
-        cell_vents_open_time : `float`
-            Time to open cell vents (sec)
-        m1_pressure : `float`
-            Initial M1 air pressure (units?)
-        m2_pressure : `float`
-            Initial M2 air pressure (units?)
-        main_pressure : `float`
-            Initial main air pressure (units?)
-        cell_load : `float`
-            Initial cell load (units?)
-        """
-        assert m1_covers_close_time >= 0
-        assert m1_covers_close_time >= 0
-        assert cell_vents_close_time >= 0
-        assert cell_vents_open_time >= 0
-        assert m1_pressure > 0
-        assert m2_pressure > 0
-        assert main_pressure > 0
-        assert cell_load > 0
-        await self.evt_m1SetPressure.set_write(pressure=m1_pressure)
-        await self.evt_m2SetPressure.set_write(pressure=m2_pressure)
-        self.m1_covers_close_time = m1_covers_close_time
-        self.m1_covers_open_time = m1_covers_open_time
-        self.cell_vents_close_time = cell_vents_close_time
-        self.cell_vents_open_time = cell_vents_open_time
-        self.main_pressure = main_pressure
-        self.cell_load = cell_load
-
-    async def initialize(self) -> None:
-        """Initialize events and telemetry.
-
-        * instrumentState
-        * m1CoverLimitSwitches
-        * m1CoverState
-        * m1SetPressure
-        * m1State
-        * cellVentsState (should be named m1VentsState)
-        * m1VentsLimitSwitches
-        * m1VentsPosition
-        * m2SetPressure
-        * m2State
-        * mainValveState
-        * powerStatus
-        """
-        await self.evt_eStop.set_write(triggered=False)
-        await self.set_cell_vents_events(closed=True, opened=False)
-        await self.set_m1_cover_events(closed=True, opened=False)
-        await self.evt_instrumentState.set_write(
-            state=ATPneumatics.AirValveState.OPENED,
-        )
-        await self.evt_m1State.set_write(
-            state=ATPneumatics.AirValveState.OPENED,
-        )
-        await self.evt_m2State.set_write(
-            state=ATPneumatics.AirValveState.OPENED,
-        )
-        await self.evt_mainValveState.set_write(
-            state=ATPneumatics.AirValveState.OPENED,
-        )
-        await self.evt_powerStatus.set_write(
-            powerOnL1=True,
-            powerOnL2=True,
-            powerOnL3=True,
-        )
+        # Iterator for command sequence_id.
+        self._command_sequence_id_generator = utils.index_generator()
 
     async def do_closeInstrumentAirValve(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        await self.evt_instrumentState.set_write(
-            state=ATPneumatics.AirValveState.CLOSED,
+        self.assert_enabled("closeInstrumentAirValve")
+        command_issued = await self.write_command(
+            command=Command.CLOSE_INSTRUMENT_AIR_VALE
         )
+        await command_issued.done
 
     async def do_closeM1CellVents(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        self._open_cell_vents_task.cancel()
-        if self.m1_vents_closing:
-            return
-        self._close_cell_vents_task = asyncio.ensure_future(self.close_cell_vents())
+        self.assert_enabled("closeM1CellVents")
+        command_issued = await self.write_command(command=Command.CLOSE_M1_CELL_VENTS)
+        await command_issued.done
 
     async def do_closeM1Cover(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        if self.m1CoversClosing:
-            return
-        self._open_m1_covers_task.cancel()
-        self._close_m1_covers_task = asyncio.ensure_future(self.close_m1_covers())
+        self.assert_enabled("closeM1Cover")
+        command_issued = await self.write_command(command=Command.CLOSE_M1_COVER)
+        await command_issued.done
 
     async def do_closeMasterAirSupply(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        await self.evt_mainValveState.set_write(
-            state=ATPneumatics.AirValveState.CLOSED,
+        self.assert_enabled("closeMasterAirSupply")
+        command_issued = await self.write_command(
+            command=Command.CLOSE_MASTER_AIR_SUPPLY
         )
+        await command_issued.done
 
     async def do_m1CloseAirValve(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        await self.evt_m1State.set_write(
-            state=ATPneumatics.AirValveState.CLOSED,
-        )
+        self.assert_enabled("m1CloseAirValve")
+        command_issued = await self.write_command(command=Command.M1_CLOSE_AIR_VALVE)
+        await command_issued.done
 
     async def do_m1SetPressure(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        await self.evt_m1SetPressure.set_write(pressure=data.pressure)
+        self.assert_enabled("m1SetPressure")
+        command_issued = await self.write_command(
+            command=Command.M1_SET_PRESSURE, pressure=data.pressure
+        )
+        await command_issued.done
 
     async def do_m2CloseAirValve(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        await self.evt_m2State.set_write(
-            state=ATPneumatics.AirValveState.CLOSED,
-        )
+        self.assert_enabled("m2CloseAirValve")
+        command_issued = await self.write_command(command=Command.M2_CLOSE_AIR_VALVE)
+        await command_issued.done
 
     async def do_m1OpenAirValve(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        await self.evt_m1State.set_write(
-            state=ATPneumatics.AirValveState.OPENED,
-        )
+        self.assert_enabled("m1OpenAirValve")
+        command_issued = await self.write_command(command=Command.M1_OPEN_AIR_VALVE)
+        await command_issued.done
 
     async def do_m2OpenAirValve(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        await self.evt_m2State.set_write(
-            state=ATPneumatics.AirValveState.OPENED,
-        )
+        self.assert_enabled("m2OpenAirValve")
+        command_issued = await self.write_command(command=Command.M2_OPEN_AIR_VALVE)
+        await command_issued.done
 
     async def do_m2SetPressure(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        await self.evt_m2SetPressure.set_write(pressure=data.pressure)
+        self.assert_enabled("m2SetPressure")
+        command_issued = await self.write_command(
+            command=Command.M2_SET_PRESSURE, pressure=data.pressure
+        )
+        await command_issued.done
 
     async def do_openInstrumentAirValve(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        await self.evt_instrumentState.set_write(
-            state=ATPneumatics.AirValveState.OPENED,
+        self.assert_enabled("openInstrumentAirValve")
+        command_issued = await self.write_command(
+            command=Command.OPEN_INSTRUMENT_AIR_VALVE
         )
+        await command_issued.done
 
     async def do_openM1CellVents(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        self._close_cell_vents_task.cancel()
-        if self.m1VentsOpening:
-            return
-        self._open_cell_vents_task = asyncio.ensure_future(self.open_cell_vents())
+        self.assert_enabled("openM1CellVents")
+        command_issued = await self.write_command(command=Command.OPEN_M1_CELL_VENTS)
+        await command_issued.done
 
     async def do_openM1Cover(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        self._close_m1_covers_task.cancel()
-        if self.m1CoversOpening:
-            return
-        self._open_m1_covers_task = asyncio.ensure_future(self.open_m1_covers())
+        self.assert_enabled("openM1Cover")
+        command_issued = await self.write_command(command=Command.OPEN_M1_COVER)
+        await command_issued.done
 
     async def do_openMasterAirSupply(self, data: salobj.BaseMsgType) -> None:
-        self.assert_enabled()
-        await self.evt_mainValveState.set_write(
-            state=ATPneumatics.AirValveState.OPENED,
+        self.assert_enabled("openMasterAirSupply")
+        command_issued = await self.write_command(
+            command=Command.OPEN_MASTER_AIR_SUPPLY
         )
-
-    @property
-    def m1CoversClosing(self) -> bool:
-        """Are the M1 covers closing?"""
-        return not self._close_m1_covers_task.done()
-
-    @property
-    def m1CoversOpening(self) -> bool:
-        """Are the M1 covers opening?"""
-        return not self._open_m1_covers_task.done()
-
-    @property
-    def m1_vents_closing(self) -> bool:
-        """Are the M1 vents closing?"""
-        return not self._close_cell_vents_task.done()
-
-    @property
-    def m1VentsOpening(self) -> bool:
-        """Are the M1 vents opening?"""
-        return not self._open_cell_vents_task.done()
-
-    async def close_m1_covers(self) -> None:
-        """Close the M1 covers."""
-        if self.evt_m1CoverState.data.state != ATPneumatics.MirrorCoverState.CLOSED:
-            await self.set_m1_cover_events(closed=False, opened=False)
-            await asyncio.sleep(self.m1_covers_close_time)
-        await self.set_m1_cover_events(closed=True, opened=False)
-
-    async def close_cell_vents(self) -> None:
-        """Close the M1 vents."""
-        if self.evt_m1VentsPosition.data.position != ATPneumatics.VentsPosition.CLOSED:
-            await self.set_cell_vents_events(closed=False, opened=False)
-            await asyncio.sleep(self.cell_vents_close_time)
-        await self.set_cell_vents_events(closed=True, opened=False)
-
-    async def open_m1_covers(self) -> None:
-        """Open the M1 covers."""
-        if self.evt_m1CoverState.data.state != ATPneumatics.MirrorCoverState.OPENED:
-            await self.set_m1_cover_events(closed=False, opened=False)
-            await asyncio.sleep(self.m1_covers_open_time)
-        await self.set_m1_cover_events(closed=False, opened=True)
-
-    async def open_cell_vents(self) -> None:
-        """Open the M1 vents."""
-        if self.evt_m1VentsPosition.data.position != ATPneumatics.VentsPosition.OPENED:
-            await self.set_cell_vents_events(closed=False, opened=False)
-            await asyncio.sleep(self.cell_vents_open_time)
-        await self.set_cell_vents_events(closed=False, opened=True)
+        await command_issued.done
 
     async def handle_summary_state(self) -> None:
-        await super().handle_summary_state()
         if self.summary_state in (salobj.State.DISABLED, salobj.State.ENABLED):
-            asyncio.create_task(self.telemetry_loop())
+            await self.start_clients()
+        else:
+            await self.stop_clients()
 
-    async def set_cell_vents_events(self, closed: bool, opened: bool) -> None:
-        """Set m1VentsLimitSwitches, m1VentsPosition and cellVentsState events.
+    async def start_clients(self) -> None:
+        if self.connected:
+            self.log.warning("Already connected. Ignoring.")
+            return
 
-        Output any changes.
+        # TODO DM-38912 Get this from the configuration.
+        host = ""
+        cmd_evt_port = 0
+        telemetry_port = 0
+
+        if self.simulation_mode == 1:
+            await self.pneumatics_simulator.cmd_evt_server.start_task
+            await self.pneumatics_simulator.telemetry_server.start_task
+            host = self.pneumatics_simulator.cmd_evt_server.host
+            cmd_evt_port = self.pneumatics_simulator.cmd_evt_server.port
+            telemetry_port = self.pneumatics_simulator.telemetry_server.port
+
+        self.cmd_evt_client = tcpip.Client(
+            host=host, port=cmd_evt_port, log=self.log, name="CmdEvtClient"
+        )
+        self.telemetry_client = tcpip.Client(
+            host=host, port=telemetry_port, log=self.log, name="TelemetryClient"
+        )
+
+        await self.cmd_evt_client.start_task
+        await self.telemetry_client.start_task
+
+        self._event_task = asyncio.create_task(self.cmd_evt_loop())
+        self._telemetry_task = asyncio.create_task(self.telemetry_loop())
+
+    async def stop_clients(self) -> None:
+        if not self.connected:
+            self.log.warning("Not connected. Ignoring.")
+            return
+
+        self._event_task.cancel()
+        self._telemetry_task.cancel()
+
+        await self.cmd_evt_client.close()
+        await self.telemetry_client.close()
+
+        if self.simulation_mode == 1 and self.pneumatics_simulator:
+            await self.pneumatics_simulator.telemetry_server.close()
+            await self.pneumatics_simulator.cmd_evt_server.close()
+
+    async def close_tasks(self) -> None:
+        """Shut down pending tasks. Called by `close`.
+
+        Perform all cleanup other than disabling logging to SAL
+        and closing the dds domain.
+        """
+        await self.stop_clients()
+        await super().close_tasks()
+
+    async def write_command(
+        self, command: str, **params: dict[str, Any]
+    ) -> CommandIssued:
+        """Write the command JSON string to the TCP/IP command/event server.
 
         Parameters
         ----------
-        closed : `bool`
-            Are the closed switches active?
-        opened : `bool`
-            Are the opened switches active?
-        """
-        assert not (closed and opened)
-        if not (closed or opened):
-            await self.evt_cellVentsState.set_write(
-                state=ATPneumatics.CellVentState.INMOTION,
-            )
+        command: `str`
+            The command to write.
+        **params:
+            The parameters for the command. This may be empty.
 
-        await self.evt_m1VentsLimitSwitches.set_write(
-            ventsClosedActive=closed,
-            ventsOpenedActive=opened,
-        )
-        if opened:
-            await self.evt_m1VentsPosition.set_write(
-                position=ATPneumatics.VentsPosition.OPENED,
-            )
-            await self.evt_cellVentsState.set_write(
-                state=ATPneumatics.CellVentState.OPENED,
-            )
-        elif closed:
-            await self.evt_m1VentsPosition.set_write(
-                position=ATPneumatics.VentsPosition.CLOSED,
-            )
-            await self.evt_cellVentsState.set_write(
-                state=ATPneumatics.CellVentState.CLOSED,
-            )
-        else:
-            await self.evt_m1VentsPosition.set_write(
-                position=ATPneumatics.VentsPosition.PARTIALLYOPENED,
-            )
-
-    async def set_m1_cover_events(self, closed: bool, opened: bool) -> None:
-        """Set m1CoverLimitSwitches and m1CoverState events.
-
-        Output any changes.
-
-        Parameters
-        ----------
-        closed : `bool`
-            Are the closed switches active?
-        opened : `bool`
-            Are the opened switches active?
-        """
-        await self.evt_m1CoverLimitSwitches.set_write(
-            cover1ClosedActive=closed,
-            cover2ClosedActive=closed,
-            cover3ClosedActive=closed,
-            cover4ClosedActive=closed,
-            cover1OpenedActive=opened,
-            cover2OpenedActive=opened,
-            cover3OpenedActive=opened,
-            cover4OpenedActive=opened,
-        )
-        if opened and closed:
-            await self.evt_m1CoverState.set_write(
-                state=ATPneumatics.MirrorCoverState.INVALID,
-            )
-        elif opened:
-            await self.evt_m1CoverState.set_write(
-                state=ATPneumatics.MirrorCoverState.OPENED,
-            )
-        elif closed:
-            await self.evt_m1CoverState.set_write(
-                state=ATPneumatics.MirrorCoverState.CLOSED,
-            )
-        else:
-            await self.evt_m1CoverState.set_write(
-                state=ATPneumatics.MirrorCoverState.INMOTION,
-            )
-
-    async def telemetry_loop(self) -> None:
-        """Output telemetry and events that have changed
+        Returns
+        -------
+        command_issued : `CommandIssued`
+            An instance of CommandIssued to monitor the future state of the
+            command.
 
         Notes
         -----
-        Here are the telemetry topics that are output:
-
-        * m1AirPressure
-        * m2AirPressure
-        * mainAirSourcePressure
-        * loadCell
-
-        See `update_events` for the events that are output.
+        If no command parameters are passed on then a default parameter named
+        ``value`` is added since the real ATPneumatics expects this. This will
+        be removed in DM-39629.
         """
-        while self.summary_state == salobj.State.ENABLED:
-            opened_state = ATPneumatics.AirValveState.OPENED
-            main_valve_open = self.evt_mainValveState.data.state == opened_state
+        sequence_id = next(self._command_sequence_id_generator)
+        data: dict[str, Any] = {
+            CommandArgument.ID.value: command,
+            CommandArgument.SEQUENCE_ID.value: sequence_id,
+        }
+        for param in params:
+            data[param] = params[param]
+        # TODO DM-39629 Remove this when it is not necessary anymore.
+        if len(params) == 0:
+            data[CommandArgument.VALUE] = True
+        command_issued = CommandIssued(name=command)
+        self.commands_issued[sequence_id] = command_issued
+        await self.cmd_evt_client.write_json(data)
+        return command_issued
 
-            if main_valve_open and self.evt_m1State.data.state == opened_state:
-                m1_pressure = self.evt_m1SetPressure.data.pressure
+    async def cmd_evt_loop(self) -> None:
+        """Execute the command and event loop.
+
+        This loop waits for incoming command and event messages and processes
+        them when they arrive.
+        """
+        while True:
+            data = await self.cmd_evt_client.read_json()
+            data_id: str = data["id"]
+
+            # If data_id starts with "evt_" then handle the event data.
+            if data_id.startswith("evt_"):
+                await self.call_set_write(data=data)
+            elif CommandArgument.SEQUENCE_ID in data:
+                sequence_id = data[CommandArgument.SEQUENCE_ID]
+                response = data[CommandArgument.ID]
+                match response:
+                    case Ack.ACK:
+                        self.commands_issued[sequence_id].set_ack()
+                    case Ack.NOACK:
+                        self.commands_issued[sequence_id].set_noack()
+                    case Ack.SUCCESS:
+                        self.commands_issued[sequence_id].set_success()
+                    case Ack.FAIL:
+                        self.commands_issued[sequence_id].set_fail()
             else:
-                m1_pressure = 0
+                await self.fault(
+                    code=None,
+                    report=f"Received incorrect event or command {data=}.",
+                )
 
-            if main_valve_open and self.evt_m2State.data.state == opened_state:
-                m2_pressure = self.evt_m2SetPressure.data.pressure
+    async def telemetry_loop(self) -> None:
+        """Execute the telemetry loop.
+
+        This loop waits for incoming telemetry messages and processes them when
+        they arrive.
+        """
+        while True:
+            data = await self.telemetry_client.read_json()
+            data_id = ""
+            try:
+                data_id = data["id"]
+            except Exception:
+                self.log.warning(f"Unable to parse {data=}. Ignoring.")
+            if data_id.startswith("tel_"):
+                if data_id not in self.unrecognized_telemetry_topics:
+                    try:
+                        getattr(self, data_id)
+                    except Exception:
+                        self.log.warning(
+                            f"Unknown telemetry topic {data_id}. Ignoring."
+                        )
+                        self.unrecognized_telemetry_topics.add(data_id)
+                    else:
+                        await self.call_set_write(data=data)
             else:
-                m2_pressure = 0
+                await self.log.error(f"Received non-telemetry {data=}.")
 
-            await self.tel_m1AirPressure.set_write(pressure=m1_pressure)
-            await self.tel_m2AirPressure.set_write(pressure=m2_pressure)
-            await self.tel_mainAirSourcePressure.set_write(
-                pressure=self.main_pressure if main_valve_open else 0
-            )
-            await self.tel_loadCell.set_write(cellLoad=self.cell_load)
-            await asyncio.sleep(self.telemetry_interval)
+    @property
+    def connected(self) -> bool:
+        return self.cmd_evt_client.connected and self.telemetry_client.connected
+
+    async def call_set_write(self, data: dict[str, Any]) -> None:
+        """Call await ``set_write`` for an event or telemetry.
+
+        ``data`` contains both the event or telemetry name and the attribute
+        values. The method will first extract the name and the values and then
+        write.
+
+        Parameters
+        ----------
+        data : `dict`[`str`, `Any`]
+            Data
+        """
+        name: str = data["id"]
+        kwargs = {k: v for k, v in data.items() if k != "id"}
+        attr = getattr(self, f"{name}")
+        await attr.set_write(**kwargs)
 
 
 def run_atpneumatics_simulator() -> None:

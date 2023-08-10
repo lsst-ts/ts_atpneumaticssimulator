@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "id": {
-            "const": "mainAirSourcePressure"
+            "const": "tel_mainAirSourcePressure"
         },
         "pressure": {
             "type": "number",
