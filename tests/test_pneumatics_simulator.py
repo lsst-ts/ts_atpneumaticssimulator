@@ -26,7 +26,7 @@ import typing
 import unittest
 
 import jsonschema
-from lsst.ts import atpneumaticssimulator, tcpip
+from lsst.ts import atpneumaticssimulator, attcpip, tcpip
 
 # Standard timeout in seconds.
 TIMEOUT = 2
@@ -98,7 +98,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             # No need for asserts here. If the data id is not present in
             # registry or the validation of the schema fails, the test will
             # fail as well.
-            json_schema = atpneumaticssimulator.registry[
+            json_schema = attcpip.registry[
                 f"logevent_{data['id'].removeprefix('evt_')}"
             ]
             jsonschema.validate(data, json_schema)
@@ -106,14 +106,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
     async def verify_command_response(
         self,
         client: tcpip.Client,
-        ack: atpneumaticssimulator.Ack,
+        ack: attcpip.Ack,
         sequence_id: int,
     ) -> None:
         data = await client.read_json()
-        assert atpneumaticssimulator.CommandArgument.ID in data
-        assert atpneumaticssimulator.CommandArgument.SEQUENCE_ID in data
-        assert data[atpneumaticssimulator.CommandArgument.ID] == ack
-        assert data[atpneumaticssimulator.CommandArgument.SEQUENCE_ID] == sequence_id
+        assert attcpip.CommonCommandArgument.ID in data
+        assert attcpip.CommonCommandArgument.SEQUENCE_ID in data
+        assert data[attcpip.CommonCommandArgument.ID] == ack
+        assert data[attcpip.CommonCommandArgument.SEQUENCE_ID] == sequence_id
 
     async def test_close_instrument_air_valve(self) -> None:
         async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
@@ -122,14 +122,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeInstrumentAirValve",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_closeInstrumentAirValve",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -138,7 +138,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -151,14 +151,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeM1CellVents",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_closeM1CellVents",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -175,7 +175,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -188,14 +188,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeM1Cover",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_closeM1Cover",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -208,7 +208,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -219,14 +219,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeMasterAirSupply",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_closeMasterAirSupply",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -235,7 +235,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -246,14 +246,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_m1CloseAirValve",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_m1CloseAirValve",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -262,7 +262,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -273,14 +273,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_m1OpenAirValve",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_m1OpenAirValve",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -289,7 +289,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -300,14 +300,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_m1SetPressure",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.ID: "cmd_m1SetPressure",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
                     atpneumaticssimulator.CommandArgument.PRESSURE: 0.0,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -316,7 +316,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -327,14 +327,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_m2CloseAirValve",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_m2CloseAirValve",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -343,7 +343,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -354,14 +354,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_m2OpenAirValve",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_m2OpenAirValve",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -370,7 +370,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -381,14 +381,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_m2SetPressure",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.ID: "cmd_m2SetPressure",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
                     atpneumaticssimulator.CommandArgument.PRESSURE: 0.0,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -397,7 +397,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -408,14 +408,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_openInstrumentAirValve",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_openInstrumentAirValve",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -424,7 +424,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -437,14 +437,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_openM1CellVents",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_openM1CellVents",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -477,7 +477,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -490,14 +490,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_openM1Cover",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_openM1Cover",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -518,7 +518,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -529,14 +529,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_openMasterAirSupply",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_openMasterAirSupply",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -545,7 +545,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -556,13 +556,13 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "non-existing",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.ID: "non-existing",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.NOACK,
+                ack=attcpip.Ack.NOACK,
                 sequence_id=sequence_id,
             )
 
@@ -573,14 +573,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeInstrumentAirValve",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_closeInstrumentAirValve",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.ACK,
+                ack=attcpip.Ack.ACK,
                 sequence_id=sequence_id,
             )
             await self.verify_event(
@@ -589,7 +589,7 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.SUCCESS,
+                ack=attcpip.Ack.SUCCESS,
                 sequence_id=sequence_id,
             )
 
@@ -597,14 +597,14 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             sequence_id = 3
             await cmd_evt_client.write_json(
                 data={
-                    atpneumaticssimulator.CommandArgument.ID: "cmd_closeInstrumentAirValve",
-                    atpneumaticssimulator.CommandArgument.SEQUENCE_ID: sequence_id,
-                    atpneumaticssimulator.CommandArgument.VALUE: True,
+                    attcpip.CommonCommandArgument.ID: "cmd_closeInstrumentAirValve",
+                    attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    attcpip.CommonCommandArgument.VALUE: True,
                 }
             )
             await self.verify_command_response(
                 client=cmd_evt_client,
-                ack=atpneumaticssimulator.Ack.NOACK,
+                ack=attcpip.Ack.NOACK,
                 sequence_id=sequence_id,
             )
 
@@ -622,5 +622,5 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                 # No need for asserts here. If the data id is not present in
                 # registry or the validation of the schema fails, the test will
                 # fail as well.
-                json_schema = atpneumaticssimulator.registry[f"{data['id']}"]
+                json_schema = attcpip.registry[f"{data['id']}"]
                 jsonschema.validate(data, json_schema)

@@ -24,12 +24,10 @@ from __future__ import annotations
 __all__ = ["PneumaticsSimulator"]
 
 import asyncio
-import logging
-import types
+import pathlib
 import typing
 
-import jsonschema
-from lsst.ts import tcpip, utils
+from lsst.ts import attcpip, tcpip, utils
 from lsst.ts.idl.enums import ATPneumatics
 
 from .dataclasses import (
@@ -41,34 +39,18 @@ from .dataclasses import (
     MainAirSourcePressure,
     PowerStatus,
 )
-from .enums import Ack, Command, CommandArgument, Event, OpenCloseState, Telemetry
-from .pneumatics_server_simulator import PneumaticsServerSimulator
-from .schemas.registry import registry
+from .enums import Command, Event, OpenCloseState, Telemetry
 
-CMD_ITEMS_TO_IGNORE = frozenset({CommandArgument.ID, CommandArgument.VALUE})
+CMD_ITEMS_TO_IGNORE = frozenset(
+    {attcpip.CommonCommandArgument.ID, attcpip.CommonCommandArgument.VALUE}
+)
 
 
-class PneumaticsSimulator:
+class PneumaticsSimulator(attcpip.AtSimulator):
     """Simulate the ATPneumatics system."""
 
     def __init__(self) -> None:
-        self.log = logging.getLogger(type(self).__name__)
-        self.cmd_evt_server = PneumaticsServerSimulator(
-            host=tcpip.LOCALHOST_IPV4,
-            port=5000,
-            log=self.log,
-            dispatch_callback=self.cmd_evt_dispatch_callback,
-            connect_callback=self.cmd_evt_connect_callback,
-            name="CmdEvtPneumaticsServer",
-        )
-        self.telemetry_server = PneumaticsServerSimulator(
-            host=tcpip.LOCALHOST_IPV4,
-            port=6000,
-            log=self.log,
-            dispatch_callback=self.telemetry_dispatch_callback,
-            connect_callback=self.tel_connect_callback,
-            name="TelemetryPneumaticsServer",
-        )
+        super().__init__()
 
         # Interval between telemetry updates [sec].
         self.telemetry_interval = 1.0
@@ -109,11 +91,6 @@ class PneumaticsSimulator:
         self.m2_air_pressure = M2AirPressure()
         self.main_air_source_pressure = MainAirSourcePressure()
 
-        # Keep track of the sequence_id as commands come dripping in. The
-        # sequence ID should raise monotonally without gaps. If a gap is seen,
-        # a NOACK should be returned.
-        self.last_sequence_id = 0
-
         # Dict of command: function.
         self.dispatch_dict: dict[str, typing.Callable] = {
             Command.CLOSE_INSTRUMENT_AIR_VALE: self.do_close_instrument_air_valve,
@@ -131,6 +108,10 @@ class PneumaticsSimulator:
             Command.OPEN_M1_COVER: self.do_open_m1_cover,
             Command.OPEN_MASTER_AIR_SUPPLY: self.do_open_master_air_supply,
         }
+
+    def load_schemas(self) -> None:
+        schema_dir = pathlib.Path(__file__).parent / "schemas"
+        attcpip.load_schemas(schema_dir=schema_dir)
 
     # TODO DM-38912 Make this configurable.
     async def configure(
@@ -226,60 +207,20 @@ class PneumaticsSimulator:
         data_ok = await self.verify_data(data=data)
         if not data_ok:
             await self.write_noack_response(
-                sequence_id=data[CommandArgument.SEQUENCE_ID]
+                sequence_id=data[attcpip.CommonCommandArgument.SEQUENCE_ID]
             )
             return
 
-        await self.write_ack_response(sequence_id=data[CommandArgument.SEQUENCE_ID])
+        await self.write_ack_response(
+            sequence_id=data[attcpip.CommonCommandArgument.SEQUENCE_ID]
+        )
 
-        cmd = data[CommandArgument.ID]
+        cmd = data[attcpip.CommonCommandArgument.ID]
         func = self.dispatch_dict[cmd]
         kwargs = {
             key: value for key, value in data.items() if key not in CMD_ITEMS_TO_IGNORE
         }
         await func(**kwargs)
-
-    async def telemetry_dispatch_callback(self, data: typing.Any) -> None:
-        pass
-
-    async def verify_data(self, data: dict[str, typing.Any]) -> bool:
-        """Verify the format and values of the data.
-
-        The format of the data is described at
-        https://github.com/lsst-ts/ts_labview_tcp_json
-        as well as in the JSON schemas in the schemas directory.
-
-        Parameters
-        ----------
-        data : `dict` of `any`
-            The dict to be verified.
-
-        Returns
-        -------
-        bool:
-            Whether the data follows the correct format and has the correct
-            contents or not.
-        """
-        if CommandArgument.ID not in data or CommandArgument.SEQUENCE_ID not in data:
-            self.log.error(f"Received invalid {data=}. Ignoring.")
-            return False
-        payload_id = data[CommandArgument.ID].replace("cmd_", "command_")
-        if payload_id not in registry:
-            self.log.error(f"Unknown command in {data=}.")
-            return False
-
-        sequence_id = data[CommandArgument.SEQUENCE_ID]
-        if sequence_id - self.last_sequence_id != 1:
-            return False
-        self.last_sequence_id = sequence_id
-
-        json_schema = registry[payload_id]
-        try:
-            jsonschema.validate(data, json_schema)
-        except jsonschema.ValidationError as e:
-            self.log.exception("Validation failed.", e)
-            return False
-        return True
 
     async def do_close_instrument_air_valve(self, sequence_id: int) -> None:
         self.instrument_state = ATPneumatics.AirValveState.CLOSED
@@ -371,34 +312,6 @@ class PneumaticsSimulator:
         await self._write_evt(evt_id=Event.MAINVALVESTATE, state=self.main_valve_state)
         await self.write_success_response(sequence_id=sequence_id)
 
-    async def write_response(self, response: str, sequence_id: int) -> None:
-        data = {CommandArgument.ID: response, CommandArgument.SEQUENCE_ID: sequence_id}
-        await self.cmd_evt_server.write_json(data=data)
-
-    async def write_ack_response(self, sequence_id: int) -> None:
-        await self.write_response(Ack.ACK, sequence_id)
-
-    async def write_fail_response(self, sequence_id: int) -> None:
-        await self.write_response(Ack.FAIL, sequence_id)
-
-    async def write_noack_response(self, sequence_id: int) -> None:
-        await self.write_response(Ack.NOACK, sequence_id)
-
-    async def write_success_response(self, sequence_id: int) -> None:
-        await self.write_response(Ack.SUCCESS, sequence_id)
-
-    async def _write_evt(self, evt_id: str, **kwargs: typing.Any) -> None:
-        await self.cmd_evt_server.write_json(data={"id": evt_id, **kwargs})
-
-    async def _write_telemetry(self, tel_id: str, data: typing.Any) -> None:
-        # TODO DM-39615 This needs to be cleaned up as soon as we have moved to
-        #  Kafka.
-        data_dict = data.get_vars() if hasattr(data, "get_vars") else vars(data)
-        items = {k: v for k, v in data_dict.items() if not k.startswith("private")}
-
-        items["id"] = tel_id
-        await self.telemetry_server.write_json(data={**items})
-
     async def cmd_evt_connect_callback(self, server: tcpip.OneClientServer) -> None:
         """Callback function for when a cmd/evt client connects or disconnects.
 
@@ -410,7 +323,7 @@ class PneumaticsSimulator:
             await self.configure()
             await self.initialize()
 
-    async def tel_connect_callback(self, server: tcpip.OneClientServer) -> None:
+    async def telemetry_connect_callback(self, server: tcpip.OneClientServer) -> None:
         """Callback function for when a tel client connects or disconnects.
 
         When a tel client connects, the telemetry loop is started.
@@ -546,15 +459,3 @@ class PneumaticsSimulator:
         except Exception as e:
             print(f"update_telemetry failed: {e}")
             raise
-
-    async def __aenter__(self) -> PneumaticsSimulator:
-        return self
-
-    async def __aexit__(
-        self,
-        type: typing.Type[BaseException],
-        value: BaseException,
-        traceback: types.TracebackType,
-    ) -> None:
-        await self.cmd_evt_server.close()
-        await self.telemetry_server.close()
