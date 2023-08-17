@@ -21,14 +21,7 @@
 
 import enum
 
-__all__ = ["Ack", "Command", "CommandArgument", "Event", "OpenCloseState", "Telemetry"]
-
-
-class Ack(str, enum.Enum):
-    ACK = "ack"
-    FAIL = "fail"
-    NOACK = "noack"
-    SUCCESS = "success"
+__all__ = ["Command", "CommandArgument", "Event", "OpenCloseState", "Telemetry"]
 
 
 class Command(str, enum.Enum):
@@ -53,10 +46,7 @@ class Command(str, enum.Enum):
 class CommandArgument(str, enum.Enum):
     """Enum containing all possible command arguments."""
 
-    ID = "id"
     PRESSURE = "pressure"
-    SEQUENCE_ID = "sequence_id"
-    VALUE = "value"
 
 
 class Event(str, enum.Enum):
