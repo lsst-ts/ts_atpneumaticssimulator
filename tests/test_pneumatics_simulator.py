@@ -42,7 +42,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
     async def create_pneumatics_simulator(
         self,
     ) -> typing.AsyncGenerator[atpneumaticssimulator.PneumaticsSimulator, None]:
-        async with atpneumaticssimulator.PneumaticsSimulator() as simulator:
+        async with atpneumaticssimulator.PneumaticsSimulator(
+            host=tcpip.LOCALHOST_IPV4, cmd_evt_port=5000, telemetry_port=6000
+        ) as simulator:
             await simulator.cmd_evt_server.start_task
             await simulator.telemetry_server.start_task
             yield simulator

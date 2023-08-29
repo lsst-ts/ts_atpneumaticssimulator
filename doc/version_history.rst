@@ -14,6 +14,7 @@ v2.0.0
 * Add Pneumatics simulator and simulator server for testing the TCP/IP interaction with the real ATPneumatics server.
 * Move simulation code mostly unchanged from the CSC to the simulator.
 * Remove all simulator code from the CSC and connect to the simulator via TCP/IP.
+* Make ATPneumaticsCsc a Configurable CSC.
 
 Requirements:
 

@@ -47,10 +47,22 @@ CMD_ITEMS_TO_IGNORE = frozenset(
 
 
 class PneumaticsSimulator(attcpip.AtSimulator):
-    """Simulate the ATPneumatics system."""
+    """Simulate the ATPneumatics system.
 
-    def __init__(self) -> None:
-        super().__init__()
+    Attributes
+    ----------
+    host : `str`
+        The simulator host.
+    cmd_evt_port : `int`
+        The command and events port.
+    telemetry_port : `int`
+        The telemetry port.
+    """
+
+    def __init__(self, host: str, cmd_evt_port: int, telemetry_port: int) -> None:
+        super().__init__(
+            host=host, cmd_evt_port=cmd_evt_port, telemetry_port=telemetry_port
+        )
 
         # Interval between telemetry updates [sec].
         self.telemetry_interval = 1.0
@@ -78,7 +90,6 @@ class PneumaticsSimulator(attcpip.AtSimulator):
         self.main_valve_state = ATPneumatics.AirValveState.CLOSED
         self.power_status = PowerStatus()
 
-        # TODO DM-38912 Make this configurable.
         # Configuration items.
         self.m1_covers_close_time = 0.0
         self.m1_covers_open_time = 0.0
@@ -113,7 +124,6 @@ class PneumaticsSimulator(attcpip.AtSimulator):
         schema_dir = pathlib.Path(__file__).parent / "schemas"
         attcpip.load_schemas(schema_dir=schema_dir)
 
-    # TODO DM-38912 Make this configurable.
     async def configure(
         self,
         m1_covers_close_time: float = 20.0,
