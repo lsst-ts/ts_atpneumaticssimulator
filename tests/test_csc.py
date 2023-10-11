@@ -24,7 +24,7 @@ import pathlib
 import unittest
 
 import pytest
-from lsst.ts import atpneumaticssimulator, salobj
+from lsst.ts import atpneumaticssimulator, attcpip, salobj
 from lsst.ts.idl.enums import ATPneumatics
 
 STD_TIMEOUT = 2  # standard timeout (sec)
@@ -423,3 +423,18 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                     "openMasterAirSupply",
                 )
             )
+
+    async def test_csc_state_commands(self) -> None:
+        async with self.make_csc(initial_state=salobj.State.STANDBY):
+            await self.remote.cmd_start.set_start()  # type: ignore
+            await self.csc.simulator.configure()
+            assert self.csc.simulator.simulator_state == attcpip.SimulatorState.DISABLED
+
+            await self.remote.cmd_enable.start()  # type: ignore
+            assert self.csc.simulator.simulator_state == attcpip.SimulatorState.ENABLED
+
+            await self.remote.cmd_disable.start()  # type: ignore
+            assert self.csc.simulator.simulator_state == attcpip.SimulatorState.DISABLED
+
+            await self.remote.cmd_standby.start()  # type: ignore
+            assert self.csc.simulator.simulator_state == attcpip.SimulatorState.STANDBY

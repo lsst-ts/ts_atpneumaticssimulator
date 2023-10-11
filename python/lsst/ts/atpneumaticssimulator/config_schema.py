@@ -32,7 +32,7 @@ CONFIG_SCHEMA = yaml.safe_load(
     f"""
     $schema: http://json-schema.org/draft-07/schema#
     $id: {URL}
-    title: MTDome v1
+    title: ATPneumatics v1
     description: Schema for ATPneumatics CSC configuration files.
     type: object
     properties:

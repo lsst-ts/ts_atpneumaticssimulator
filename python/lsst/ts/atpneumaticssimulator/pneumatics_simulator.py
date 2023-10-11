@@ -41,10 +41,6 @@ from .dataclasses import (
 )
 from .enums import Command, Event, OpenCloseState, Telemetry
 
-CMD_ITEMS_TO_IGNORE = frozenset(
-    {attcpip.CommonCommandArgument.ID, attcpip.CommonCommandArgument.VALUE}
-)
-
 
 class PneumaticsSimulator(attcpip.AtSimulator):
     """Simulate the ATPneumatics system.
@@ -103,7 +99,7 @@ class PneumaticsSimulator(attcpip.AtSimulator):
         self.main_air_source_pressure = MainAirSourcePressure()
 
         # Dict of command: function.
-        self.dispatch_dict: dict[str, typing.Callable] = {
+        self.dispatch_dict: dict[str, typing.Callable] = self.dispatch_dict | {
             Command.CLOSE_INSTRUMENT_AIR_VALE: self.do_close_instrument_air_valve,
             Command.CLOSE_M1_CELL_VENTS: self.do_close_m1_cell_vents,
             Command.CLOSE_M1_COVER: self.do_close_m1_cover,
@@ -212,25 +208,6 @@ class PneumaticsSimulator(attcpip.AtSimulator):
             powerOnL2=self.power_status.powerOnL2,
             powerOnL3=self.power_status.powerOnL3,
         )
-
-    async def cmd_evt_dispatch_callback(self, data: typing.Any) -> None:
-        data_ok = await self.verify_data(data=data)
-        if not data_ok:
-            await self.write_noack_response(
-                sequence_id=data[attcpip.CommonCommandArgument.SEQUENCE_ID]
-            )
-            return
-
-        await self.write_ack_response(
-            sequence_id=data[attcpip.CommonCommandArgument.SEQUENCE_ID]
-        )
-
-        cmd = data[attcpip.CommonCommandArgument.ID]
-        func = self.dispatch_dict[cmd]
-        kwargs = {
-            key: value for key, value in data.items() if key not in CMD_ITEMS_TO_IGNORE
-        }
-        await func(**kwargs)
 
     async def do_close_instrument_air_valve(self, sequence_id: int) -> None:
         self.instrument_state = ATPneumatics.AirValveState.CLOSED
