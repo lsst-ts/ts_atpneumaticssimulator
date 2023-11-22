@@ -27,6 +27,7 @@ import unittest
 
 import jsonschema
 from lsst.ts import atpneumaticssimulator, attcpip, tcpip
+from lsst.ts.xml import sal_enums
 
 # Standard timeout in seconds.
 TIMEOUT = 2
@@ -40,11 +41,12 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
 
     @contextlib.asynccontextmanager
     async def create_pneumatics_simulator(
-        self,
+        self, go_to_fault_state: bool
     ) -> typing.AsyncGenerator[atpneumaticssimulator.PneumaticsSimulator, None]:
         async with atpneumaticssimulator.PneumaticsSimulator(
             host=tcpip.LOCALHOST_IPV4, cmd_evt_port=5000, telemetry_port=6000
         ) as simulator:
+            simulator.go_to_fault_state = go_to_fault_state
             await simulator.cmd_evt_server.start_task
             await simulator.telemetry_server.start_task
             yield simulator
@@ -90,18 +92,18 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
         evt_name: str,
     ) -> None:
         data = await client.read_json()
-        assert "id" in data
-        assert data["id"] == evt_name
+        assert attcpip.CommonCommandArgument.ID in data
+        assert data[attcpip.CommonCommandArgument.ID] == evt_name
 
     async def verify_all_events(self, client: tcpip.Client) -> None:
         """Verify that all events have been emitted."""
-        for i in range(len(EVENTS_TO_EXPECT)):
+        for _ in range(len(EVENTS_TO_EXPECT)):
             data = await client.read_json()
             # No need for asserts here. If the data id is not present in
             # registry or the validation of the schema fails, the test will
             # fail as well.
             json_schema = attcpip.registry[
-                f"logevent_{data['id'].removeprefix('evt_')}"
+                f"logevent_{data[attcpip.CommonCommandArgument.ID].removeprefix('evt_')}"
             ]
             jsonschema.validate(data, json_schema)
 
@@ -118,9 +120,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
         assert data[attcpip.CommonCommandArgument.SEQUENCE_ID] == sequence_id
 
     async def test_close_instrument_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -145,9 +147,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_close_m1_cell_vents(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             # Mock a state where the M1 vents are open.
             simulator.m1_vents_state = atpneumaticssimulator.OpenCloseState.OPEN
             sequence_id = 1
@@ -182,9 +184,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_close_m1_cover(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             # Mock a state where the M1 covers are open.
             simulator.m1_covers_state = atpneumaticssimulator.OpenCloseState.OPEN
             sequence_id = 1
@@ -215,9 +217,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_close_master_air_supply(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -242,9 +244,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m1_close_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -269,9 +271,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m1_open_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -296,9 +298,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m1_set_pressure(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -323,9 +325,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m2_close_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -350,9 +352,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m2_open_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -377,9 +379,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_m2_set_pressure(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -404,9 +406,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_instrument_air_valve(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -431,9 +433,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_m1_cell_vents(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             # Set a much shorter time to speed up the unit test.
             simulator.cell_vents_open_time = 0.1
             sequence_id = 1
@@ -484,9 +486,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_m1_cover(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             # Set a much shorter time to speed up the unit test.
             simulator.m1_covers_open_time = 0.1
             sequence_id = 1
@@ -525,9 +527,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_open_master_air_supply(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -552,9 +554,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_non_existing_command(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -569,9 +571,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_skip_sequence_id(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
-            simulator
-        ) as cmd_evt_client:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
             sequence_id = 1
             await cmd_evt_client.write_json(
                 data={
@@ -611,7 +613,9 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_update_telemetry(self) -> None:
-        async with self.create_pneumatics_simulator() as simulator, self.create_cmd_evt_client(
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=False
+        ) as simulator, self.create_cmd_evt_client(
             simulator
         ), self.create_telemetry_client(
             simulator
@@ -629,17 +633,17 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_stimulator_state_commands(self) -> None:
         async with (
-            self.create_pneumatics_simulator() as simulator,
+            self.create_pneumatics_simulator(go_to_fault_state=False) as simulator,
             self.create_cmd_evt_client(simulator) as cmd_evt_client,
         ):
-            assert simulator.simulator_state == attcpip.SimulatorState.STANDBY
+            assert simulator.simulator_state == sal_enums.State.STANDBY
 
             sequence_id = 0
             commands_and_expected_states = {
-                attcpip.CommonCommand.START: attcpip.SimulatorState.DISABLED,
-                attcpip.CommonCommand.ENABLE: attcpip.SimulatorState.ENABLED,
-                attcpip.CommonCommand.DISABLE: attcpip.SimulatorState.DISABLED,
-                attcpip.CommonCommand.STANDBY: attcpip.SimulatorState.STANDBY,
+                attcpip.CommonCommand.START: sal_enums.State.DISABLED,
+                attcpip.CommonCommand.ENABLE: sal_enums.State.ENABLED,
+                attcpip.CommonCommand.DISABLE: sal_enums.State.DISABLED,
+                attcpip.CommonCommand.STANDBY: sal_enums.State.STANDBY,
             }
 
             for command in commands_and_expected_states:
@@ -657,6 +661,43 @@ class PneumaticsSimulatorTestCase(unittest.IsolatedAsyncioTestCase):
                     client=cmd_evt_client,
                     ack=attcpip.Ack.SUCCESS,
                     sequence_id=sequence_id,
+                )
+                await self.verify_event(
+                    cmd_evt_client, attcpip.CommonEvent.SUMMARY_STATE
+                )
+                assert (
+                    simulator.simulator_state == commands_and_expected_states[command]
+                )
+
+    async def test_fault_state(self) -> None:
+        async with self.create_pneumatics_simulator(
+            go_to_fault_state=True
+        ) as simulator, self.create_cmd_evt_client(simulator) as cmd_evt_client:
+            assert simulator.simulator_state == sal_enums.State.STANDBY
+            sequence_id = 0
+            commands_and_expected_states = {
+                attcpip.CommonCommand.START: sal_enums.State.FAULT,
+                attcpip.CommonCommand.STANDBY: sal_enums.State.STANDBY,
+            }
+
+            for command in commands_and_expected_states:
+                sequence_id = sequence_id + 1
+                await cmd_evt_client.write_json(
+                    data={
+                        attcpip.CommonCommandArgument.ID: command,
+                        attcpip.CommonCommandArgument.SEQUENCE_ID: sequence_id,
+                    }
+                )
+                await self.verify_command_response(
+                    client=cmd_evt_client, ack=attcpip.Ack.ACK, sequence_id=sequence_id
+                )
+                await self.verify_command_response(
+                    client=cmd_evt_client,
+                    ack=attcpip.Ack.SUCCESS,
+                    sequence_id=sequence_id,
+                )
+                await self.verify_event(
+                    cmd_evt_client, attcpip.CommonEvent.SUMMARY_STATE
                 )
                 assert (
                     simulator.simulator_state == commands_and_expected_states[command]
