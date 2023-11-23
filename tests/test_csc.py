@@ -20,29 +20,32 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
-import pathlib
 import unittest
+from typing import Any
 
 import pytest
 from lsst.ts import atpneumaticssimulator, salobj
 from lsst.ts.xml import sal_enums
 from lsst.ts.xml.enums import ATPneumatics
 
-STD_TIMEOUT = 2  # standard timeout (sec)
-LONG_TIMEOUT = 60
+STD_TIMEOUT = 60.0  # standard timeout (sec)
 NODATA_TIMEOUT = 0.1  # timeout when no data expected (sec)
 
 
 class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
     def basic_make_csc(
         self,
-        initial_state: salobj.State | int,
-        config_dir: str | pathlib.Path | None,
-        index: int = 1,
-        simulation_mode: int = 1,
+        initial_state: salobj.State,
+        config_dir: str,
         override: str = "",
+        **kwargs: Any,
     ) -> atpneumaticssimulator.ATPneumaticsCsc:
-        return atpneumaticssimulator.ATPneumaticsCsc(initial_state=initial_state)
+        return atpneumaticssimulator.ATPneumaticsCsc(
+            initial_state=initial_state,
+            config_dir=config_dir,
+            simulation_mode=1,
+            override=override,
+        )
 
     async def test_bin_script(self) -> None:
         """Test that run_atdometrajectory runs the CSC."""

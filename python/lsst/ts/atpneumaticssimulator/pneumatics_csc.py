@@ -22,6 +22,7 @@
 __all__ = ["ATPneumaticsCsc", "run_atpneumatics_simulator"]
 
 import asyncio
+import pathlib
 
 from lsst.ts import attcpip, salobj
 
@@ -63,8 +64,11 @@ class ATPneumaticsCsc(attcpip.AtTcpipCsc):
 
     def __init__(
         self,
-        config_dir: str | None = None,
+        config_dir: str | pathlib.Path | None = None,
+        check_if_duplicate: bool = False,
         initial_state: salobj.State = salobj.State.STANDBY,
+        override: str = "",
+        simulation_mode: int = 0,
     ) -> None:
         super().__init__(
             name="ATPneumatics",
@@ -72,14 +76,15 @@ class ATPneumaticsCsc(attcpip.AtTcpipCsc):
             config_schema=CONFIG_SCHEMA,
             config_dir=config_dir,
             initial_state=initial_state,
-            simulation_mode=1,
+            override=override,
+            simulation_mode=simulation_mode,
         )
 
         # PenumaticsSimulator for simulation_mode == 1.
         self.simulator: PneumaticsSimulator | None = None
 
     async def start_clients(self) -> None:
-        if self.simulator is None:
+        if self.simulation_mode == 1 and self.simulator is None:
             self.simulator = PneumaticsSimulator(
                 host=self.config.host,
                 cmd_evt_port=self.config.cmd_evt_port,
