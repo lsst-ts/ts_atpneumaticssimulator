@@ -28,7 +28,12 @@ import pathlib
 import typing
 
 from lsst.ts import attcpip, tcpip, utils
-from lsst.ts.idl.enums import ATPneumatics
+from lsst.ts.xml.enums.ATPneumatics import (
+    AirValveState,
+    CellVentState,
+    MirrorCoverState,
+    VentsPosition,
+)
 
 from .dataclasses import (
     LoadCell,
@@ -71,19 +76,19 @@ class PneumaticsSimulator(attcpip.AtSimulator):
         self.m1_vents_state = OpenCloseState.CLOSED
 
         # Event data.
-        self.cell_vents_state = ATPneumatics.CellVentState.CLOSED
+        self.cell_vents_state = CellVentState.CLOSED
         self.e_stop = False
-        self.instrument_state = ATPneumatics.AirValveState.CLOSED
+        self.instrument_state = AirValveState.CLOSED
         self.m1_cover_limit_switches = M1CoverLimitSwitches()
-        self.m1_cover_state = ATPneumatics.MirrorCoverState.CLOSED
+        self.m1_cover_state = MirrorCoverState.CLOSED
         self.m1_pressure = 0.0
-        self.m1_state = ATPneumatics.AirValveState.CLOSED
+        self.m1_state = AirValveState.CLOSED
         self.m1_vents_limit_switches = M1VentsLimitSwitches()
-        self.m1_vents_position = ATPneumatics.VentsPosition.CLOSED
-        self.m2_cover_state = ATPneumatics.MirrorCoverState.CLOSED
+        self.m1_vents_position = VentsPosition.CLOSED
+        self.m2_cover_state = MirrorCoverState.CLOSED
         self.m2_pressure = 0.0
-        self.m2_state = ATPneumatics.AirValveState.CLOSED
-        self.main_valve_state = ATPneumatics.AirValveState.CLOSED
+        self.m2_state = AirValveState.CLOSED
+        self.main_valve_state = AirValveState.CLOSED
         self.power_status = PowerStatus()
 
         # Configuration items.
@@ -191,13 +196,13 @@ class PneumaticsSimulator(attcpip.AtSimulator):
         await self._write_evt(evt_id=Event.ESTOP, triggered=self.e_stop)
         await self.set_cell_vents_events(closed=True, opened=False)
         await self.set_m1_cover_events(closed=True, opened=False)
-        self.instrument_state = ATPneumatics.AirValveState.OPENED
+        self.instrument_state = AirValveState.OPENED
         await self._write_evt(evt_id=Event.INSTRUMENTSTATE, state=self.instrument_state)
-        self.m1_state = ATPneumatics.AirValveState.OPENED
+        self.m1_state = AirValveState.OPENED
         await self._write_evt(evt_id=Event.M1STATE, state=self.m1_state)
-        self.m2_state = ATPneumatics.AirValveState.OPENED
+        self.m2_state = AirValveState.OPENED
         await self._write_evt(evt_id=Event.M2STATE, state=self.m2_state)
-        self.main_valve_state = ATPneumatics.AirValveState.OPENED
+        self.main_valve_state = AirValveState.OPENED
         await self._write_evt(evt_id=Event.MAINVALVESTATE, state=self.main_valve_state)
         self.power_status.powerOnL1 = True
         self.power_status.powerOnL2 = True
@@ -210,14 +215,14 @@ class PneumaticsSimulator(attcpip.AtSimulator):
         )
 
     async def do_close_instrument_air_valve(self, sequence_id: int) -> None:
-        self.instrument_state = ATPneumatics.AirValveState.CLOSED
+        self.instrument_state = AirValveState.CLOSED
         await self._write_evt(evt_id=Event.INSTRUMENTSTATE, state=self.instrument_state)
         await self.write_success_response(sequence_id=sequence_id)
 
     async def do_close_m1_cell_vents(self, sequence_id: int) -> None:
         if self.m1_vents_state not in [OpenCloseState.CLOSING, OpenCloseState.CLOSED]:
             self.m1_vents_state = OpenCloseState.CLOSING
-            if self.m1_vents_position != ATPneumatics.VentsPosition.CLOSED:
+            if self.m1_vents_position != VentsPosition.CLOSED:
                 await self.set_cell_vents_events(closed=False, opened=False)
                 await asyncio.sleep(self.cell_vents_close_time)
             await self.set_cell_vents_events(closed=True, opened=False)
@@ -227,7 +232,7 @@ class PneumaticsSimulator(attcpip.AtSimulator):
     async def do_close_m1_cover(self, sequence_id: int) -> None:
         if self.m1_covers_state not in [OpenCloseState.CLOSING, OpenCloseState.CLOSED]:
             self.m1_covers_state = OpenCloseState.CLOSING
-            if self.m1_cover_state != ATPneumatics.MirrorCoverState.CLOSED:
+            if self.m1_cover_state != MirrorCoverState.CLOSED:
                 await self.set_m1_cover_events(closed=False, opened=False)
                 await asyncio.sleep(self.m1_covers_close_time)
             await self.set_m1_cover_events(closed=True, opened=False)
@@ -235,17 +240,17 @@ class PneumaticsSimulator(attcpip.AtSimulator):
         await self.write_success_response(sequence_id=sequence_id)
 
     async def do_close_master_air_supply(self, sequence_id: int) -> None:
-        self.main_valve_state = ATPneumatics.AirValveState.CLOSED
+        self.main_valve_state = AirValveState.CLOSED
         await self._write_evt(evt_id=Event.MAINVALVESTATE, state=self.main_valve_state)
         await self.write_success_response(sequence_id=sequence_id)
 
     async def do_m1_close_air_valve(self, sequence_id: int) -> None:
-        self.m1_state = ATPneumatics.AirValveState.CLOSED
+        self.m1_state = AirValveState.CLOSED
         await self._write_evt(evt_id=Event.M1STATE, state=self.m1_state)
         await self.write_success_response(sequence_id=sequence_id)
 
     async def do_m1_open_air_valve(self, sequence_id: int) -> None:
-        self.m1_state = ATPneumatics.AirValveState.OPENED
+        self.m1_state = AirValveState.OPENED
         await self._write_evt(evt_id=Event.M1STATE, state=self.m1_state)
         await self.write_success_response(sequence_id=sequence_id)
 
@@ -255,12 +260,12 @@ class PneumaticsSimulator(attcpip.AtSimulator):
         await self.write_success_response(sequence_id=sequence_id)
 
     async def do_m2_close_air_valve(self, sequence_id: int) -> None:
-        self.m2_state = ATPneumatics.AirValveState.CLOSED
+        self.m2_state = AirValveState.CLOSED
         await self._write_evt(evt_id=Event.M2STATE, state=self.m2_state)
         await self.write_success_response(sequence_id=sequence_id)
 
     async def do_m2_open_air_valve(self, sequence_id: int) -> None:
-        self.m2_state = ATPneumatics.AirValveState.OPENED
+        self.m2_state = AirValveState.OPENED
         await self._write_evt(evt_id=Event.M2STATE, state=self.m2_state)
         await self.write_success_response(sequence_id=sequence_id)
 
@@ -270,14 +275,14 @@ class PneumaticsSimulator(attcpip.AtSimulator):
         await self.write_success_response(sequence_id=sequence_id)
 
     async def do_open_instrument_air_valve(self, sequence_id: int) -> None:
-        self.instrument_state = ATPneumatics.AirValveState.OPENED
+        self.instrument_state = AirValveState.OPENED
         await self._write_evt(evt_id=Event.INSTRUMENTSTATE, state=self.instrument_state)
         await self.write_success_response(sequence_id=sequence_id)
 
     async def do_open_m1_cell_vents(self, sequence_id: int) -> None:
         if self.m1_vents_state not in [OpenCloseState.OPENING, OpenCloseState.OPEN]:
             self.m1_vents_state = OpenCloseState.OPENING
-            if self.m1_vents_position != ATPneumatics.VentsPosition.OPENED:
+            if self.m1_vents_position != VentsPosition.OPENED:
                 await self.set_cell_vents_events(closed=False, opened=False)
                 await asyncio.sleep(self.cell_vents_open_time)
             await self.set_cell_vents_events(closed=False, opened=True)
@@ -287,7 +292,7 @@ class PneumaticsSimulator(attcpip.AtSimulator):
     async def do_open_m1_cover(self, sequence_id: int) -> None:
         if self.m1_covers_state not in [OpenCloseState.OPENING, OpenCloseState.OPEN]:
             self.m1_covers_state = OpenCloseState.OPENING
-            if self.m1_cover_state != ATPneumatics.MirrorCoverState.OPENED:
+            if self.m1_cover_state != MirrorCoverState.OPENED:
                 await self.set_m1_cover_events(closed=False, opened=False)
                 await asyncio.sleep(self.m1_covers_open_time)
             await self.set_m1_cover_events(closed=False, opened=True)
@@ -295,7 +300,7 @@ class PneumaticsSimulator(attcpip.AtSimulator):
         await self.write_success_response(sequence_id=sequence_id)
 
     async def do_open_master_air_supply(self, sequence_id: int) -> None:
-        self.main_valve_state = ATPneumatics.AirValveState.OPENED
+        self.main_valve_state = AirValveState.OPENED
         await self._write_evt(evt_id=Event.MAINVALVESTATE, state=self.main_valve_state)
         await self.write_success_response(sequence_id=sequence_id)
 
@@ -335,7 +340,7 @@ class PneumaticsSimulator(attcpip.AtSimulator):
             Are the opened switches active?
         """
         if not (closed or opened):
-            self.cell_vents_state = ATPneumatics.CellVentState.INMOTION
+            self.cell_vents_state = CellVentState.INMOTION
             await self._write_evt(
                 evt_id=Event.CELLVENTSTATE, state=self.cell_vents_state
             )
@@ -348,18 +353,18 @@ class PneumaticsSimulator(attcpip.AtSimulator):
             ventsOpenedActive=self.m1_vents_limit_switches.ventsOpenedActive,
         )
         if opened:
-            self.m1_vents_position = ATPneumatics.VentsPosition.OPENED
+            self.m1_vents_position = VentsPosition.OPENED
         elif closed:
-            self.m1_vents_position = ATPneumatics.VentsPosition.CLOSED
+            self.m1_vents_position = VentsPosition.CLOSED
         else:
-            self.m1_vents_position = ATPneumatics.VentsPosition.PARTIALLYOPENED
+            self.m1_vents_position = VentsPosition.PARTIALLYOPENED
         await self._write_evt(
             evt_id=Event.M1VENTSPOSITION, position=self.m1_vents_position
         )
         if opened:
-            self.cell_vents_state = ATPneumatics.CellVentState.OPENED
+            self.cell_vents_state = CellVentState.OPENED
         elif closed:
-            self.cell_vents_state = ATPneumatics.CellVentState.CLOSED
+            self.cell_vents_state = CellVentState.CLOSED
         await self._write_evt(evt_id=Event.CELLVENTSTATE, state=self.cell_vents_state)
 
     async def set_m1_cover_events(self, closed: bool, opened: bool) -> None:
@@ -384,13 +389,13 @@ class PneumaticsSimulator(attcpip.AtSimulator):
             kwargs[opened_attr_name] = opened
         await self._write_evt(evt_id=Event.M1COVERLIMITSWITCHES, **kwargs)
         if opened and closed:
-            self.m1_cover_state = ATPneumatics.MirrorCoverState.INVALID
+            self.m1_cover_state = MirrorCoverState.INVALID
         elif opened:
-            self.m1_cover_state = ATPneumatics.MirrorCoverState.OPENED
+            self.m1_cover_state = MirrorCoverState.OPENED
         elif closed:
-            self.m1_cover_state = ATPneumatics.MirrorCoverState.CLOSED
+            self.m1_cover_state = MirrorCoverState.CLOSED
         else:
-            self.m1_cover_state = ATPneumatics.MirrorCoverState.INMOTION
+            self.m1_cover_state = MirrorCoverState.INMOTION
         await self._write_evt(evt_id=Event.M1COVERSTATE, state=self.m1_cover_state)
 
     async def telemetry_loop(self) -> None:
@@ -414,7 +419,7 @@ class PneumaticsSimulator(attcpip.AtSimulator):
     async def update_telemetry(self) -> None:
         """Output all telemetry data messages."""
         try:
-            opened_state = ATPneumatics.AirValveState.OPENED
+            opened_state = AirValveState.OPENED
             main_valve_open = self.main_valve_state == opened_state
 
             if main_valve_open and self.m1_state == opened_state:
