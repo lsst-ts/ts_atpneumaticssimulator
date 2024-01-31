@@ -16,7 +16,7 @@ v2.0.0
 * Remove all simulator code from the CSC and connect to the simulator via TCP/IP.
 * Make ATPneumaticsCsc a Configurable CSC.
 * Add support for sending start, disable, enable and standby commands.
-* Add support for summary state and detailed state events and for FAULT state.
+* Add support for summary state, detailed state and errorCode events and for FAULT state.
 * Support simulation mode 0.
 
 Requirements:
