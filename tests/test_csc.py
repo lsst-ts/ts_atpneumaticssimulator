@@ -20,6 +20,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import pathlib
 import unittest
 from typing import Any
 
@@ -30,6 +31,8 @@ from lsst.ts.xml.enums import ATPneumatics
 
 STD_TIMEOUT = 60.0  # standard timeout (sec)
 NODATA_TIMEOUT = 0.1  # timeout when no data expected (sec)
+
+CONFIG_DIR = pathlib.Path(__file__).parent / "data" / "config"
 
 
 class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
@@ -60,7 +63,9 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
 
         except the m3PortSelected event
         """
-        async with self.make_csc(initial_state=salobj.State.ENABLED):
+        async with self.make_csc(
+            initial_state=salobj.State.ENABLED, config_dir=CONFIG_DIR
+        ):
             await self.assert_next_summary_state(salobj.State.ENABLED)
             await self.assert_next_sample(
                 topic=self.remote.evt_softwareVersions,
@@ -91,7 +96,9 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 await tel.next(flush=False, timeout=STD_TIMEOUT)
 
     async def test_air_valves(self) -> None:
-        async with self.make_csc(initial_state=salobj.State.ENABLED):
+        async with self.make_csc(
+            initial_state=salobj.State.ENABLED, config_dir=CONFIG_DIR
+        ):
             await self.assert_next_sample(
                 self.remote.evt_instrumentState, state=ATPneumatics.AirValveState.OPENED
             )
@@ -148,7 +155,9 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
     async def test_cell_vents(self) -> None:
         desired_close_time = 0.4  # sec
         desired_open_time = 0.8  # sec
-        async with self.make_csc(initial_state=salobj.State.ENABLED):
+        async with self.make_csc(
+            initial_state=salobj.State.ENABLED, config_dir=CONFIG_DIR
+        ):
             await self.csc.simulator.configure(
                 cell_vents_close_time=desired_close_time,
                 cell_vents_open_time=desired_open_time,
@@ -254,7 +263,9 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
     async def test_mirror_covers(self) -> None:
         desired_close_time = 0.4  # sec
         desired_open_time = 0.8  # sec
-        async with self.make_csc(initial_state=salobj.State.ENABLED):
+        async with self.make_csc(
+            initial_state=salobj.State.ENABLED, config_dir=CONFIG_DIR
+        ):
             await self.csc.simulator.configure(
                 m1_covers_close_time=desired_close_time,
                 m1_covers_open_time=desired_open_time,
@@ -368,7 +379,9 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
                 )
 
     async def test_set_pressure(self) -> None:
-        async with self.make_csc(initial_state=salobj.State.ENABLED):
+        async with self.make_csc(
+            initial_state=salobj.State.ENABLED, config_dir=CONFIG_DIR
+        ):
             # output telemetry often so we don't have to wait
             self.csc.telemetry_interval = 0.1
             init_m1_pressure = 5
@@ -408,7 +421,9 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
 
     async def test_standard_state_transitions(self) -> None:
         """Test standard CSC state transitions."""
-        async with self.make_csc(initial_state=salobj.State.STANDBY):
+        async with self.make_csc(
+            initial_state=salobj.State.STANDBY, config_dir=CONFIG_DIR
+        ):
             await self.check_standard_state_transitions(
                 enabled_commands=(
                     "closeInstrumentAirValve",
@@ -429,7 +444,9 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_csc_state_commands(self) -> None:
-        async with self.make_csc(initial_state=salobj.State.STANDBY):
+        async with self.make_csc(
+            initial_state=salobj.State.STANDBY, config_dir=CONFIG_DIR
+        ):
             await self.remote.cmd_start.start()
             await self.csc.simulator.configure()
             assert self.csc.simulator.simulator_state == sal_enums.State.DISABLED
@@ -456,7 +473,9 @@ class CscTestCase(salobj.BaseCscTestCase, unittest.IsolatedAsyncioTestCase):
             assert self.csc.simulator.simulator_state == sal_enums.State.STANDBY
 
     async def test_csc_with_fault_state(self) -> None:
-        async with self.make_csc(initial_state=salobj.State.STANDBY):
+        async with self.make_csc(
+            initial_state=salobj.State.STANDBY, config_dir=CONFIG_DIR
+        ):
             await self.remote.cmd_start.start()
             await self.csc.simulator.configure()
             assert self.csc.simulator.simulator_state == sal_enums.State.DISABLED
